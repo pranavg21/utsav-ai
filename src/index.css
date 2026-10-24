@@ -1,0 +1,59 @@
+/**
+ * @fileoverview Global CSS with Tailwind directives, custom animations, and accessibility styles.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .high-contrast {
+    --tw-text-opacity: 1;
+    filter: contrast(1.25);
+  }
+
+  .large-text {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .large-text h1 { font-size: 2.25rem; }
+  .large-text h2 { font-size: 1.5rem; }
+  .large-text h3 { font-size: 1.25rem; }
+  .large-text button,
+  .large-text input,
+  .large-text select,
+  .large-text textarea { font-size: 1rem; }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
