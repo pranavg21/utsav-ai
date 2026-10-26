@@ -31,6 +31,15 @@ export function setRuntimeApiKey(key: string): void {
 }
 
 /**
+ * Returns the currently active API key string.
+ *
+ * @returns The active key or empty string.
+ */
+export function getActiveApiKey(): string {
+  return getApiKey();
+}
+
+/**
  * Returns the active API key (runtime override or env variable).
  *
  * @returns The API key string or empty string if not configured.
