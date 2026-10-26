@@ -1,6 +1,8 @@
 # UtsavAI — Dynamic Celebration & Event Execution Engine
 
 > **PromptWars Virtual — Challenge 5 (Celebration & Event Planner)**  
+> **Live Google Cloud Deployment:** [https://utsavai-challenge5.web.app](https://utsavai-challenge5.web.app)  
+> **GitHub Repository:** [https://github.com/pranavg21/utsav-ai](https://github.com/pranavg21/utsav-ai)  
 > An intent-driven, dependency-aware AI execution engine that transforms chaotic celebration planning into structured budgets, priority-aligned trade-offs, critical-path timelines, and verified vendor comparisons.
 
 ---
