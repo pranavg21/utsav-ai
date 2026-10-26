@@ -37,7 +37,10 @@ export function setRuntimeApiKey(key: string): void {
  */
 function getApiKey(): string {
   if (runtimeApiKey) { return runtimeApiKey; }
-  try { return import.meta.env.VITE_GEMINI_API_KEY ?? ''; }
+  try {
+    if (import.meta.env.MODE === 'test') { return ''; }
+    return import.meta.env.VITE_GEMINI_API_KEY ?? '';
+  }
   catch { return ''; }
 }
 
