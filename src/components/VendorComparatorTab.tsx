@@ -10,6 +10,7 @@ import { analyzeRawQuoteText, compareQuoteToContext } from '../services/vendorQu
 import type { EventContext } from '../types/planner';
 import { sanitizeUserText } from '../utils/security';
 import { CARD_CLASSES, BADGE_BASE, formatINR } from '../utils/uiHelpers';
+import { isBudgetCategoryName } from '../utils/typeGuards';
 
 /** Props for the VendorComparatorTab component. */
 interface VendorTabProps {
@@ -83,7 +84,7 @@ const VendorComparatorTab: React.FC<VendorTabProps> = ({
       <div className={CARD_CLASSES}>
         <h3 className="mb-2 text-sm font-semibold text-slate-200">Paste Raw Vendor Quote</h3>
         <div className="mb-2 flex gap-2">
-          <select value={parseCategory} onChange={(e) => setParseCategory(e.target.value as BudgetCategoryName)} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-200 focus:border-saffron-500 focus:outline-none" aria-label="Quote category">
+          <select value={parseCategory} onChange={(e) => { const v = e.target.value; if (isBudgetCategoryName(v)) { setParseCategory(v); } }} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-200 focus:border-saffron-500 focus:outline-none" aria-label="Quote category">
             {(['Venue & Logistics', 'Catering & Hospitality', 'Decor & Ambience', 'Photography & Media', 'Entertainment & Rituals'] as const).map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>

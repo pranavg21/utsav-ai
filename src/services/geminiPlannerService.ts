@@ -6,6 +6,7 @@
 import type { EventContext, PersonalizedConcept, ChangeRequestInput } from '../types/planner';
 import { getCachedResponse, setCachedResponse } from '../utils/cache';
 import { checkRateLimit } from '../utils/security';
+import { safeJsonParse } from '../utils/typeGuards';
 import {
   buildChangeRequestPrompt,
   buildThemeGenerationPrompt,
@@ -89,10 +90,12 @@ async function callGeminiWithFallback<T>(prompt: string, cacheKey: string, fallb
     const text = response.text ?? '';
     const jsonMatch = text.match(/\[[\s\S]*\]|\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]) as T;
-      isGeminiConnected = true;
-      setCachedResponse(cacheKey, parsed);
-      return parsed;
+      const parsed = safeJsonParse<T>(jsonMatch[0]);
+      if (parsed !== null) {
+        isGeminiConnected = true;
+        setCachedResponse(cacheKey, parsed);
+        return parsed;
+      }
     }
   } catch { /* Fallback to deterministic engine */ }
 

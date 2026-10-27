@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { Download } from 'lucide-react';
 import Header from './components/Header';
 import ContextIntakePanel from './components/ContextIntakePanel';
 import RippleEffectSimulator from './components/RippleEffectSimulator';
@@ -12,6 +13,7 @@ import { buildInitialBudgetItems, evaluateBudgetAndTradeoffs } from './services/
 import { buildTimeline, propagateDelay, compressTimeline } from './services/timelineDependencyGraph';
 import { getPresetVendorQuotes } from './services/vendorQuoteComparator';
 import { parseChangeRequest } from './services/geminiPlannerService';
+import { downloadPlanJson } from './utils/exportPlan';
 import type { EventContext, BudgetCategoryItem, TimelineTask, VendorQuote, ChangeRequestInput, TradeOffScenario, TaskStatus } from './types/planner';
 
 import BudgetMatrixTab from './components/BudgetMatrixTab';
@@ -114,11 +116,21 @@ const App: React.FC = () => {
       <main id="main-content" className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <ContextIntakePanel context={context} onUpdate={handleContextUpdate} />
         <RippleEffectSimulator context={context} onApplyChange={(i) => void handleChangeRequest(i)} />
-        <nav className="flex gap-1 rounded-xl border border-slate-700/50 bg-slate-900/60 p-1" aria-label="Dashboard tabs">
-          {TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === tab.id ? 'bg-saffron-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} aria-label={`Switch to ${tab.label} tab`} aria-pressed={activeTab === tab.id}>{tab.label}</button>
-          ))}
-        </nav>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <nav className="flex flex-1 gap-1 rounded-xl border border-slate-700/50 bg-slate-900/60 p-1" aria-label="Dashboard tabs">
+            {TABS.map((tab) => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === tab.id ? 'bg-saffron-600 text-white' : 'text-slate-400 hover:text-slate-200'}`} aria-label={`Switch to ${tab.label} tab`} aria-pressed={activeTab === tab.id}>{tab.label}</button>
+            ))}
+          </nav>
+          <button
+            onClick={() => downloadPlanJson(context, evaluation, tasks, vendorQuotes)}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700/60 bg-slate-800/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-saffron-500 hover:text-saffron-400"
+            aria-label="Export complete celebration plan as JSON"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export Plan
+          </button>
+        </div>
         <div className="animate-fade-in">
           {activeTab === 'budget' && <BudgetMatrixTab evaluation={evaluation} onToggleVerified={handleToggleVerified} onUpdateAmount={handleUpdateAmount} onApplyTradeOff={handleApplyTradeOff} />}
           {activeTab === 'timeline' && <TimelineDependencyTab tasks={tasks} onToggleStatus={handleTaskToggle} />}

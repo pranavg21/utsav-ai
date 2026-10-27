@@ -3,6 +3,8 @@
  * Prevents duplicate LLM calls for identical prompts by caching structured responses.
  */
 
+import { safeJsonParse } from './typeGuards';
+
 /** FNV-1a 32-bit offset basis. */
 const FNV_OFFSET_BASIS = 0x811c9dc5;
 
@@ -48,7 +50,7 @@ export function getCachedResponse<T>(promptKey: string): T | null {
   const memValue = memoryCache.get(hash);
   if (memValue !== undefined) {
     promoteLru(hash);
-    return JSON.parse(memValue) as T;
+    return safeJsonParse<T>(memValue);
   }
 
   try {
@@ -56,7 +58,7 @@ export function getCachedResponse<T>(promptKey: string): T | null {
     if (stored !== null) {
       memoryCache.set(hash, stored);
       promoteLru(hash);
-      return JSON.parse(stored) as T;
+      return safeJsonParse<T>(stored);
     }
   } catch {
     /* sessionStorage unavailable in test/SSR contexts */

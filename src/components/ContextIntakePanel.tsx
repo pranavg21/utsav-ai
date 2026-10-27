@@ -6,9 +6,10 @@
 
 import React, { useCallback } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import type { EventContext, OccasionType, ExperienceTier, AgeGroupSegment, BudgetCategoryName } from '../types/planner';
+import type { EventContext, AgeGroupSegment, BudgetCategoryName } from '../types/planner';
 import { sanitizeUserText, validateNumericBound } from '../utils/security';
 import { CARD_CLASSES } from '../utils/uiHelpers';
+import { isOccasionType, isExperienceTier } from '../utils/typeGuards';
 
 /** All available budget categories for the priority ranker. */
 const ALL_CATEGORIES: BudgetCategoryName[] = [
@@ -57,7 +58,7 @@ const ContextIntakePanel: React.FC<IntakePanelProps> = ({ context, onUpdate }) =
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label className={labelCls} htmlFor="occasion">Occasion</label>
-          <select id="occasion" value={context.occasion} onChange={(e) => updateField('occasion', e.target.value as OccasionType)} className={inputCls} aria-label="Select occasion type">
+          <select id="occasion" value={context.occasion} onChange={(e) => { const v = e.target.value; if (isOccasionType(v)) { updateField('occasion', v); } }} className={inputCls} aria-label="Select occasion type">
             <option value="wedding">Wedding</option>
             <option value="birthday">Birthday</option>
             <option value="community">Community Event</option>
@@ -81,7 +82,7 @@ const ContextIntakePanel: React.FC<IntakePanelProps> = ({ context, onUpdate }) =
         </div>
         <div>
           <label className={labelCls} htmlFor="tier">Experience Tier</label>
-          <select id="tier" value={context.experienceTier} onChange={(e) => updateField('experienceTier', e.target.value as ExperienceTier)} className={inputCls} aria-label="Experience tier">
+          <select id="tier" value={context.experienceTier} onChange={(e) => { const v = e.target.value; if (isExperienceTier(v)) { updateField('experienceTier', v); } }} className={inputCls} aria-label="Experience tier">
             <option value="intimate">Intimate</option>
             <option value="balanced">Balanced</option>
             <option value="grand">Grand</option>

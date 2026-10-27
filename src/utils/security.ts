@@ -10,6 +10,7 @@ const SCRIPT_TAG_PATTERN = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi
 const HTML_TAG_PATTERN = /<[^>]*>/g;
 
 /** Regex pattern to match ASCII control characters (except newline and tab). */
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHAR_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 /** Default maximum input length to prevent oversized payloads. */

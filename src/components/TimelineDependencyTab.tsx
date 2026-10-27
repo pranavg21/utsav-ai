@@ -6,7 +6,7 @@
 import React, { useCallback } from 'react';
 import { Clock, CheckCircle, AlertTriangle, Link } from 'lucide-react';
 import type { TimelineTask, TaskStatus } from '../types/planner';
-import { CARD_CLASSES, BADGE_BASE } from '../utils/uiHelpers';
+import { BADGE_BASE } from '../utils/uiHelpers';
 
 /** Props for the TimelineDependencyTab component. */
 interface TimelineTabProps {

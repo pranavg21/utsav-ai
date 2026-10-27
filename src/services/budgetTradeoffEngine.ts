@@ -12,6 +12,7 @@ import type {
   TradeOffScenario,
 } from '../types/planner';
 import { buildScenarioOption } from './scenarioBuilder';
+import { typedKeys } from '../utils/typeGuards';
 
 /** Baseline percentage shares before user priority weighting is applied. */
 const BASE_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
@@ -35,7 +36,7 @@ export function buildInitialBudgetItems(
   context: EventContext,
   simulatedOverrunRatio = 1.0
 ): BudgetCategoryItem[] {
-  const categories = Object.keys(BASE_CATEGORY_SHARES) as BudgetCategoryName[];
+  const categories = typedKeys(BASE_CATEGORY_SHARES);
   const rawWeights: Record<BudgetCategoryName, number> = { ...BASE_CATEGORY_SHARES };
 
   context.priorityRanking.forEach((category, index) => {
