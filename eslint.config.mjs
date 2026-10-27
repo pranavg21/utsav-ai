@@ -29,6 +29,7 @@ export default [
         sessionStorage: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
+        navigator: 'readonly',
       },
     },
     plugins: {
@@ -45,6 +46,13 @@ export default [
       'prefer-const': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      'no-control-regex': 'off',
+    },
+  },
+  {
+    files: ['**/logger.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ];
