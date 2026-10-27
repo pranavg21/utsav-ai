@@ -7,6 +7,8 @@ import type { EventContext, PersonalizedConcept, ChangeRequestInput } from '../t
 import { getCachedResponse, setCachedResponse } from '../utils/cache';
 import { checkRateLimit } from '../utils/security';
 import { safeJsonParse } from '../utils/typeGuards';
+import { logger } from '../utils/logger';
+import { extractErrorMessage } from '../utils/uiHelpers';
 import {
   buildChangeRequestPrompt,
   buildThemeGenerationPrompt,
@@ -97,7 +99,11 @@ async function callGeminiWithFallback<T>(prompt: string, cacheKey: string, fallb
         return parsed;
       }
     }
-  } catch { /* Fallback to deterministic engine */ }
+  } catch (err: unknown) {
+    logger.warn('Gemini API call failed, using deterministic engine fallback', {
+      error: extractErrorMessage(err),
+    });
+  }
 
   setCachedResponse(cacheKey, fallback);
   return fallback;

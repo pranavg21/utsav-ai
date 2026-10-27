@@ -32,6 +32,12 @@ const BASE_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
  * @param simulatedOverrunRatio - Optional multiplier (e.g., 1.2 for +20% expense overrun test).
  * @returns Array of structured BudgetCategoryItem entries.
  */
+/** Boost factor per priority ranking rank step. */
+const PRIORITY_RANK_BOOST_FACTOR = 0.015;
+
+/** Fallback base weight when category share is not defined. */
+const DEFAULT_CATEGORY_WEIGHT = 0.1;
+
 export function buildInitialBudgetItems(
   context: EventContext,
   simulatedOverrunRatio = 1.0
@@ -40,8 +46,8 @@ export function buildInitialBudgetItems(
   const rawWeights: Record<BudgetCategoryName, number> = { ...BASE_CATEGORY_SHARES };
 
   context.priorityRanking.forEach((category, index) => {
-    const rankBoost = (categories.length - index) * 0.015;
-    rawWeights[category] = (rawWeights[category] ?? 0.1) + rankBoost;
+    const rankBoost = (categories.length - index) * PRIORITY_RANK_BOOST_FACTOR;
+    rawWeights[category] = (rawWeights[category] ?? DEFAULT_CATEGORY_WEIGHT) + rankBoost;
   });
 
   const weightSum = Object.values(rawWeights).reduce((sum, val) => sum + val, 0);

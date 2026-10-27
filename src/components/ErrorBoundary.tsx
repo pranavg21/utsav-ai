@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { extractErrorMessage } from '../utils/uiHelpers';
+import { logger } from '../utils/logger';
 
 /** Props for the ErrorBoundary component. */
 interface ErrorBoundaryProps {
@@ -37,6 +38,19 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     const message = extractErrorMessage(error);
     return { hasError: true, errorMessage: message };
+  }
+
+  /**
+   * Dispatches caught error details to the structured cloud logger.
+   *
+   * @param error - The caught Error object.
+   * @param errorInfo - React component stack information.
+   */
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    logger.error('Unhandled component error caught by ErrorBoundary', {
+      error: error.message,
+      componentStack: errorInfo.componentStack ?? '',
+    });
   }
 
   /**
