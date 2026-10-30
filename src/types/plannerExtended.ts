@@ -27,6 +27,14 @@ export interface TimelineTask {
   isBottleneck: boolean;
   /** Explanation of downstream ripple impact if delayed. */
   delayImpactNote: string;
+  /** Baseline days before event before any delays or shocks. */
+  baselineDaysBeforeEvent?: number | undefined;
+  /** Own specific delay in days directly assigned to this task. */
+  ownDelayDays?: number | undefined;
+  /** Flagged true if task deadline drops < 1 day or violates prerequisite order. */
+  isInfeasible?: boolean | undefined;
+  /** Minimum notice in days required to execute this task without timeline breach. */
+  minimumNoticeDays?: number | undefined;
 }
 
 /**
@@ -60,11 +68,13 @@ export interface ChangeRequestInput {
   /** Raw natural language description of the change. */
   readonly rawPrompt: string;
   /** Optional delta in guest count (e.g., +50). */
-  readonly guestDelta?: number;
-  /** Optional percentage shift in total budget (e.g., -10 for 10% cut, or +20 for overrun test). */
-  readonly budgetDeltaPercent?: number;
+  readonly guestDelta?: number | undefined;
+  /** Optional percentage shift in user total budget (e.g., -10 for 10% cut). */
+  readonly budgetDeltaPercent?: number | undefined;
+  /** Optional percentage overrun in vendor/category projected costs (e.g., +20 for 20% cost surge). */
+  readonly costOverrunPercent?: number | undefined;
   /** Optional reduction in days until event (e.g., 14 for moving 2 weeks earlier). */
-  readonly timelineDeltaDays?: number;
+  readonly timelineDeltaDays?: number | undefined;
 }
 
 /**

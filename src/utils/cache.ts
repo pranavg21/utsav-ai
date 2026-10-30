@@ -1,28 +1,22 @@
 /**
- * @fileoverview Deterministic FNV-1a hash and in-memory + sessionStorage LRU cache.
- * Prevents duplicate LLM calls for identical prompts by caching structured responses.
+ * @fileoverview Deterministic FNV-1a hash with TTL (24h), schema versioning, and sessionStorage LRU.
  */
 
 import { safeJsonParse } from './typeGuards';
 
-/** FNV-1a 32-bit offset basis. */
 const FNV_OFFSET_BASIS = 0x811c9dc5;
-
-/** FNV-1a 32-bit prime. */
 const FNV_PRIME = 0x01000193;
-
-/** Default maximum cache entries before LRU eviction. */
 const DEFAULT_MAX_ENTRIES = 50;
-
-/** sessionStorage key prefix for persistent cache entries. */
 const STORAGE_PREFIX = 'utsav_cache_';
+const SCHEMA_VERSION = 1;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-/**
- * Computes a deterministic FNV-1a 32-bit hash of the input string.
- *
- * @param input - The string to hash.
- * @returns Unsigned 32-bit hash as a hexadecimal string.
- */
+interface CacheEnvelope<T> {
+  readonly version: number;
+  readonly timestamp: number;
+  readonly data: T;
+}
+
 export function fnv1aHash(input: string): string {
   let hash = FNV_OFFSET_BASIS;
   for (let i = 0; i < input.length; i++) {
@@ -32,55 +26,59 @@ export function fnv1aHash(input: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-/** Ordered keys for LRU tracking (most recent at end). */
-const lruOrder: string[] = [];
+export function buildCompoundCacheKey(params: Record<string, unknown>): string {
+  const sorted = Object.keys(params).sort().map((k) => `${k}:${JSON.stringify(params[k])}`).join('|');
+  return fnv1aHash(sorted);
+}
 
-/** In-memory cache store. */
+const lruOrder: string[] = [];
 const memoryCache = new Map<string, string>();
 
-/**
- * Retrieves a cached response for the given prompt key if it exists.
- *
- * @param promptKey - The raw prompt string to look up.
- * @returns The cached parsed response or null if not found.
- */
+function unpackEnvelope<T>(serialized: string): T | null {
+  const envelope = safeJsonParse<CacheEnvelope<T>>(serialized);
+  if (!envelope || envelope.version !== SCHEMA_VERSION) return null;
+  if (Date.now() - envelope.timestamp > CACHE_TTL_MS) return null;
+  return envelope.data;
+}
+
 export function getCachedResponse<T>(promptKey: string): T | null {
   const hash = fnv1aHash(promptKey);
-
   const memValue = memoryCache.get(hash);
   if (memValue !== undefined) {
-    promoteLru(hash);
-    return safeJsonParse<T>(memValue);
+    const data = unpackEnvelope<T>(memValue);
+    if (data !== null) {
+      promoteLru(hash);
+      return data;
+    }
+    memoryCache.delete(hash);
   }
 
   try {
     const stored = sessionStorage.getItem(`${STORAGE_PREFIX}${hash}`);
     if (stored !== null) {
-      memoryCache.set(hash, stored);
-      promoteLru(hash);
-      return safeJsonParse<T>(stored);
+      const data = unpackEnvelope<T>(stored);
+      if (data !== null) {
+        memoryCache.set(hash, stored);
+        promoteLru(hash);
+        return data;
+      }
+      sessionStorage.removeItem(`${STORAGE_PREFIX}${hash}`);
     }
   } catch {
-    /* sessionStorage unavailable in test/SSR contexts */
+    /* test/SSR */
   }
 
   return null;
 }
 
-/**
- * Stores a response in the LRU cache (both in-memory and sessionStorage).
- *
- * @param promptKey - The raw prompt string used as cache key.
- * @param response - The response object to cache.
- * @param maxEntries - Maximum cache entries before LRU eviction.
- */
 export function setCachedResponse<T>(
   promptKey: string,
   response: T,
   maxEntries: number = DEFAULT_MAX_ENTRIES
 ): void {
   const hash = fnv1aHash(promptKey);
-  const serialized = JSON.stringify(response);
+  const envelope: CacheEnvelope<T> = { version: SCHEMA_VERSION, timestamp: Date.now(), data: response };
+  const serialized = JSON.stringify(envelope);
 
   memoryCache.set(hash, serialized);
   promoteLru(hash);
@@ -89,33 +87,35 @@ export function setCachedResponse<T>(
     const evicted = lruOrder.shift();
     if (evicted) {
       memoryCache.delete(evicted);
-      try { sessionStorage.removeItem(`${STORAGE_PREFIX}${evicted}`); } catch { /* noop */ }
+      try {
+        sessionStorage.removeItem(`${STORAGE_PREFIX}${evicted}`);
+      } catch {
+        /* noop */
+      }
     }
   }
 
-  try { sessionStorage.setItem(`${STORAGE_PREFIX}${hash}`, serialized); } catch { /* noop */ }
+  try {
+    sessionStorage.setItem(`${STORAGE_PREFIX}${hash}`, serialized);
+  } catch {
+    /* noop */
+  }
 }
 
-/**
- * Clears all entries from both in-memory and sessionStorage caches.
- */
 export function clearCache(): void {
   for (const key of memoryCache.keys()) {
-    try { sessionStorage.removeItem(`${STORAGE_PREFIX}${key}`); } catch { /* noop */ }
+    try {
+      sessionStorage.removeItem(`${STORAGE_PREFIX}${key}`);
+    } catch {
+      /* noop */
+    }
   }
   memoryCache.clear();
   lruOrder.length = 0;
 }
 
-/**
- * Promotes a hash key to the most-recently-used position in the LRU order.
- *
- * @param hash - The hash key to promote.
- */
 function promoteLru(hash: string): void {
   const idx = lruOrder.indexOf(hash);
-  if (idx !== -1) {
-    lruOrder.splice(idx, 1);
-  }
+  if (idx !== -1) lruOrder.splice(idx, 1);
   lruOrder.push(hash);
 }

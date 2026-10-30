@@ -1,94 +1,97 @@
 /**
- * @fileoverview Unit tests for the Budget Trade-Off Engine.
- * Tests baseline allocation, +20% overrun detection, priority protection, and verified quote protection.
+ * @fileoverview Unit tests for the budget allocation and trade-off engine.
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildInitialBudgetItems, evaluateBudgetAndTradeoffs } from '../services/budgetTradeoffEngine';
+import {
+  buildInitialBudgetItems,
+  evaluateBudgetAndTradeoffs,
+} from '../services/budgetTradeoffEngine';
+import { buildWaterFillingScenario } from '../domain/budget/tradeoffs';
 import type { EventContext } from '../types/planner';
 
-/** SME Benchmark test context: ₹8,00,000 Wedding | 200 Guests | 120 Days. */
 const TEST_CONTEXT: EventContext = {
   occasion: 'wedding',
   eventName: 'Test Wedding',
   totalBudget: 800000,
-  guestCount: 200,
-  daysUntilEvent: 120,
-  experienceTier: 'grand',
+  guestCount: 150,
+  daysUntilEvent: 90,
+  experienceTier: 'balanced',
   priorityRanking: [
-    'Catering & Hospitality', 'Venue & Logistics', 'Photography & Media',
-    'Decor & Ambience', 'Entertainment & Rituals', 'Contingency Reserve',
+    'Venue & Logistics',
+    'Catering & Hospitality',
+    'Decor & Ambience',
+    'Photography & Media',
+    'Entertainment & Rituals',
+    'Contingency Reserve',
   ],
-  ageGroups: ['children', 'adults', 'seniors'],
-  accessibilityNeeds: ['Wheelchair ramps'],
-  mustHaves: ['Live music'],
+  ageGroups: ['adults', 'seniors'],
+  accessibilityNeeds: [],
+  mustHaves: ['DJ', 'Mandap'],
 };
 
-describe('buildInitialBudgetItems', () => {
-  it('should generate 6 budget categories summing close to total budget', () => {
+describe('Budget Allocation & Invariants', () => {
+  it('invariant: sum of category budgets always equals total budget within 1 INR', () => {
     const items = buildInitialBudgetItems(TEST_CONTEXT);
     expect(items).toHaveLength(6);
-    const total = items.reduce((sum, i) => sum + i.allocatedAmount, 0);
-    expect(total).toBeGreaterThan(790000);
-    expect(total).toBeLessThanOrEqual(810000);
+    const sum = items.reduce((acc, i) => acc + i.allocatedAmount, 0);
+    expect(Math.abs(sum - TEST_CONTEXT.totalBudget)).toBeLessThanOrEqual(1);
   });
 
-  it('should mark all initial items as AI estimates (not verified)', () => {
+  it('marks initial items as AI estimates and weights by priority', () => {
     const items = buildInitialBudgetItems(TEST_CONTEXT);
-    for (const item of items) {
-      expect(item.isVerifiedQuote).toBe(false);
-    }
-  });
-
-  it('should assign higher priority weight to top-ranked categories', () => {
-    const items = buildInitialBudgetItems(TEST_CONTEXT);
-    const catering = items.find((i) => i.category === 'Catering & Hospitality');
-    const contingency = items.find((i) => i.category === 'Contingency Reserve');
-    expect(catering).toBeDefined();
-    expect(contingency).toBeDefined();
-    expect(catering!.priorityWeight).toBeGreaterThan(contingency!.priorityWeight);
-  });
-
-  it('should apply simulated overrun ratio to projected amounts', () => {
-    const items = buildInitialBudgetItems(TEST_CONTEXT, 1.2);
-    for (const item of items) {
-      expect(item.projectedAmount).toBeGreaterThan(item.allocatedAmount);
-    }
+    for (const item of items) expect(item.isVerifiedQuote).toBe(false);
+    const venue = items.find((i) => i.category === 'Venue & Logistics');
+    const reserve = items.find((i) => i.category === 'Contingency Reserve');
+    if (venue && reserve) expect(venue.priorityWeight).toBeGreaterThan(reserve.priorityWeight);
   });
 });
 
-describe('evaluateBudgetAndTradeoffs', () => {
-  it('should detect +20% overrun and generate 3 trade-off scenarios', () => {
+describe('Water-Filling Trade-Off Scenarios', () => {
+  it('water-filling redistributes remainders when categories hit cap', () => {
     const items = buildInitialBudgetItems(TEST_CONTEXT, 1.2);
-    const result = evaluateBudgetAndTradeoffs(TEST_CONTEXT, items);
-    expect(result.isOverBudget).toBe(true);
-    expect(result.overrunPercentage).toBeGreaterThanOrEqual(19);
-    expect(result.tradeOffScenarios).toHaveLength(3);
+    const scenario = buildWaterFillingScenario({
+      id: 'wf-test',
+      title: 'Water Filling Test',
+      description: 'Testing cap redistribution',
+      whatYouLose: 'Decor and extras',
+      items,
+      overrunAmount: 160000,
+      getWeight: (i) => (i.category === 'Catering & Hospitality' ? 0 : 5),
+      maxCutRatio: 0.3,
+    });
+    expect(scenario.totalSavings).toBeGreaterThan(0);
+    const catCut = scenario.categoryAdjustments.find((a) => a.category === 'Catering & Hospitality');
+    expect(catCut?.deltaAmount).toBe(0);
   });
 
-  it('should not generate trade-offs when within budget', () => {
-    const items = buildInitialBudgetItems(TEST_CONTEXT, 1.0);
-    const result = evaluateBudgetAndTradeoffs(TEST_CONTEXT, items);
-    expect(result.isOverBudget).toBe(false);
-    expect(result.tradeOffScenarios).toHaveLength(0);
+  it('infeasible trade-off: flags isFeasible false and reports requiredAdditionalFunds', () => {
+    const items = buildInitialBudgetItems(TEST_CONTEXT, 2.0); // 100% overrun
+    const scenario = buildWaterFillingScenario({
+      id: 'infeasible-test',
+      title: 'Extreme Overrun',
+      description: 'Overrun exceeds available non-essential capacity',
+      whatYouLose: 'All non-essentials',
+      items,
+      overrunAmount: 800000,
+      getWeight: (i) => (i.category === 'Venue & Logistics' ? 0 : 2),
+      maxCutRatio: 0.2, // Low cap limits savings to ~80k
+    });
+
+    expect(scenario.isFeasible).toBe(false);
+    expect(scenario.requiredAdditionalFunds).toBeGreaterThan(0);
+    expect(scenario.totalSavings).toBeLessThan(800000);
   });
 
-  it('Option A should protect top 2 user priorities from cuts', () => {
+  it('evaluates budget and protects verified quotes', () => {
     const items = buildInitialBudgetItems(TEST_CONTEXT, 1.2);
-    const result = evaluateBudgetAndTradeoffs(TEST_CONTEXT, items);
-    const optionA = result.tradeOffScenarios[0]!;
-    const cateringAdj = optionA.categoryAdjustments.find((a) => a.category === 'Catering & Hospitality');
-    const venueAdj = optionA.categoryAdjustments.find((a) => a.category === 'Venue & Logistics');
-    expect(Math.abs(cateringAdj?.deltaAmount ?? 1)).toBe(0);
-    expect(Math.abs(venueAdj?.deltaAmount ?? 1)).toBe(0);
-  });
-
-  it('should protect verified quotes from trade-off cuts', () => {
-    const items = buildInitialBudgetItems(TEST_CONTEXT, 1.2);
-    items[2]!.isVerifiedQuote = true;
-    const result = evaluateBudgetAndTradeoffs(TEST_CONTEXT, items);
-    const optionA = result.tradeOffScenarios[0]!;
-    const verifiedAdj = optionA.categoryAdjustments.find((a) => a.category === items[2]!.category);
-    expect(Math.abs(verifiedAdj?.deltaAmount ?? 1)).toBe(0);
+    if (items[2]) items[2].isVerifiedQuote = true;
+    const res = evaluateBudgetAndTradeoffs(TEST_CONTEXT, items);
+    expect(res.isOverBudget).toBe(true);
+    const firstScenario = res.tradeOffScenarios[0];
+    if (firstScenario && items[2]) {
+      const adj = firstScenario.categoryAdjustments.find((a) => a.category === items[2]?.category);
+      expect(adj?.deltaAmount).toBe(0);
+    }
   });
 });

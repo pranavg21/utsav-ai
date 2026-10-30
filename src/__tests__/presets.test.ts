@@ -4,12 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  WEDDING_PRESET,
-  BIRTHDAY_PRESET,
-  COMMUNITY_PRESET,
-  ALL_PRESETS,
-} from '../data/presets';
+import { WEDDING_PRESET, BIRTHDAY_PRESET, COMMUNITY_PRESET, ALL_PRESETS } from '../data/presets';
 
 describe('presets', () => {
   describe('WEDDING_PRESET (SME Benchmark)', () => {

@@ -39,16 +39,16 @@ const MOCK_ITEMS: BudgetCategoryItem[] = [
 
 describe('scenarioBuilder - buildScenarioOption', () => {
   it('should generate a scenario with correct metadata and adjustments count', () => {
-    const scenario = buildScenarioOption(
-      'opt-test',
-      'Test Scenario',
-      'Test summary',
-      MOCK_ITEMS,
-      50000,
-      () => 1,
-      'Protected',
-      'Cut applied'
-    );
+    const scenario = buildScenarioOption({
+      id: 'opt-test',
+      title: 'Test Scenario',
+      strategySummary: 'Test summary',
+      items: MOCK_ITEMS,
+      overrunAmount: 50000,
+      cutWeightFn: () => 1,
+      protectedNote: 'Protected',
+      cutNote: 'Cut applied',
+    });
 
     expect(scenario.id).toBe('opt-test');
     expect(scenario.title).toBe('Test Scenario');
@@ -57,16 +57,16 @@ describe('scenarioBuilder - buildScenarioOption', () => {
   });
 
   it('should protect items with cut weight of 0', () => {
-    const scenario = buildScenarioOption(
-      'opt-protect',
-      'Quality Preserve',
-      'Preserves catering',
-      MOCK_ITEMS,
-      60000,
-      (item) => (item.category === 'Catering & Hospitality' ? 0 : 1),
-      'Protected note',
-      'Cut note'
-    );
+    const scenario = buildScenarioOption({
+      id: 'opt-protect',
+      title: 'Quality Preserve',
+      strategySummary: 'Preserves catering',
+      items: MOCK_ITEMS,
+      overrunAmount: 60000,
+      cutWeightFn: (item) => (item.category === 'Catering & Hospitality' ? 0 : 1),
+      protectedNote: 'Protected note',
+      cutNote: 'Cut note',
+    });
 
     const cateringAdj = scenario.categoryAdjustments.find(
       (a) => a.category === 'Catering & Hospitality'
@@ -89,16 +89,16 @@ describe('scenarioBuilder - buildScenarioOption', () => {
       },
     ];
 
-    const scenario = buildScenarioOption(
-      'opt-cap',
-      'Cap Test',
-      'Tests max 45% reduction',
-      singleItem,
-      500000,
-      () => 1,
-      'Protected',
-      'Capped cut'
-    );
+    const scenario = buildScenarioOption({
+      id: 'opt-cap',
+      title: 'Cap Test',
+      strategySummary: 'Tests max 45% reduction',
+      items: singleItem,
+      overrunAmount: 500000,
+      cutWeightFn: () => 1,
+      protectedNote: 'Protected',
+      cutNote: 'Capped cut',
+    });
 
     const decorAdj = scenario.categoryAdjustments[0];
     expect(decorAdj?.deltaAmount).toBe(-45000);
@@ -107,16 +107,16 @@ describe('scenarioBuilder - buildScenarioOption', () => {
 
   it('should maintain budget mathematical invariant', () => {
     const originalTotal = MOCK_ITEMS.reduce((sum, i) => sum + i.projectedAmount, 0);
-    const scenario = buildScenarioOption(
-      'opt-invariant',
-      'Invariant Test',
-      'Summary',
-      MOCK_ITEMS,
-      80000,
-      (item) => item.priorityWeight,
-      'Protected',
-      'Adjusted'
-    );
+    const scenario = buildScenarioOption({
+      id: 'opt-invariant',
+      title: 'Invariant Test',
+      strategySummary: 'Summary',
+      items: MOCK_ITEMS,
+      overrunAmount: 80000,
+      cutWeightFn: (item) => item.priorityWeight,
+      protectedNote: 'Protected',
+      cutNote: 'Adjusted',
+    });
 
     expect(scenario.revisedTotalSpend + scenario.totalSavings).toBe(originalTotal);
   });

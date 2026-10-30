@@ -1,10 +1,12 @@
 node_modules/
 dist/
 build/
+coverage/
 .env
 .env.local
-coverage/
-package-lock.json
+.env.*
+!.env.example
 *.log
 .firebase/
 *.tsbuildinfo
+utsav-ai-submission.zip

@@ -20,8 +20,12 @@ const TEST_CONTEXT: EventContext = {
   daysUntilEvent: 120,
   experienceTier: 'grand',
   priorityRanking: [
-    'Catering & Hospitality', 'Venue & Logistics', 'Photography & Media',
-    'Decor & Ambience', 'Entertainment & Rituals', 'Contingency Reserve',
+    'Catering & Hospitality',
+    'Venue & Logistics',
+    'Photography & Media',
+    'Decor & Ambience',
+    'Entertainment & Rituals',
+    'Contingency Reserve',
   ],
   ageGroups: ['adults'],
   accessibilityNeeds: [],
@@ -55,9 +59,15 @@ describe('getPresetVendorQuotes', () => {
 describe('compareQuoteToContext', () => {
   it('should detect guest capacity shortfall', () => {
     const quote: VendorQuote = {
-      id: 'test-q1', vendorName: 'Test Vendor', category: 'Catering & Hospitality',
-      quotedPrice: 200000, guestCapacity: 150, isVerifiedQuote: false,
-      inclusions: [], hiddenRisks: [], clarificationQuestions: [],
+      id: 'test-q1',
+      vendorName: 'Test Vendor',
+      category: 'Catering & Hospitality',
+      quotedPrice: 200000,
+      guestCapacity: 150,
+      isVerifiedQuote: false,
+      inclusions: [],
+      hiddenRisks: [],
+      clarificationQuestions: [],
     };
     const result = compareQuoteToContext(quote, TEST_CONTEXT, 300000);
     expect(result.isCapacityShortfall).toBe(true);
@@ -66,9 +76,15 @@ describe('compareQuoteToContext', () => {
 
   it('should detect budget overrun when quote exceeds category budget', () => {
     const quote: VendorQuote = {
-      id: 'test-q2', vendorName: 'Expensive Vendor', category: 'Venue & Logistics',
-      quotedPrice: 350000, guestCapacity: 300, isVerifiedQuote: false,
-      inclusions: [], hiddenRisks: [], clarificationQuestions: [],
+      id: 'test-q2',
+      vendorName: 'Expensive Vendor',
+      category: 'Venue & Logistics',
+      quotedPrice: 350000,
+      guestCapacity: 300,
+      isVerifiedQuote: false,
+      inclusions: [],
+      hiddenRisks: [],
+      clarificationQuestions: [],
     };
     const result = compareQuoteToContext(quote, TEST_CONTEXT, 250000);
     expect(result.isBudgetOverrun).toBe(true);
@@ -77,9 +93,15 @@ describe('compareQuoteToContext', () => {
 
   it('should report no shortfall when capacity exceeds guest count', () => {
     const quote: VendorQuote = {
-      id: 'test-q3', vendorName: 'Big Venue', category: 'Venue & Logistics',
-      quotedPrice: 200000, guestCapacity: 500, isVerifiedQuote: false,
-      inclusions: [], hiddenRisks: [], clarificationQuestions: [],
+      id: 'test-q3',
+      vendorName: 'Big Venue',
+      category: 'Venue & Logistics',
+      quotedPrice: 200000,
+      guestCapacity: 500,
+      isVerifiedQuote: false,
+      inclusions: [],
+      hiddenRisks: [],
+      clarificationQuestions: [],
     };
     const result = compareQuoteToContext(quote, TEST_CONTEXT, 250000);
     expect(result.isCapacityShortfall).toBe(false);

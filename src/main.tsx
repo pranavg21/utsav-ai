@@ -6,6 +6,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
+import '@fontsource/inter';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -26,4 +27,3 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta
     void navigator.serviceWorker.register('/sw.js');
   });
 }
-

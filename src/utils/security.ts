@@ -12,6 +12,9 @@ const HTML_TAG_PATTERN = /<[^>]*>/g;
 /** Regex pattern to match ASCII control characters (except newline and tab). */
 const CONTROL_CHAR_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
+/** Regex pattern to match Unicode bidi overrides (RLO/LRO) and zero-width characters. */
+const BIDI_AND_ZERO_WIDTH_PATTERN = /[\u200B-\u200D\uFEFF\u202A-\u202E\u2066-\u2069]/g;
+
 /** Default maximum input length to prevent oversized payloads. */
 const DEFAULT_MAX_LENGTH = 2000;
 
@@ -25,18 +28,19 @@ const SLIDING_WINDOW_MS = 60_000;
 const rateLimitStore = new Map<string, number[]>();
 
 /**
- * Strips script tags, HTML tags, and control characters from user input.
+ * Strips script tags, HTML tags, control chars, bidi overrides, and zero-width chars with NFKC normalization.
  *
  * @param input - Raw user-provided text string.
  * @param maxLength - Maximum allowed string length (defaults to 2000).
  * @returns Sanitized plain-text string safe for processing.
  */
 export function sanitizeUserText(input: string, maxLength: number = DEFAULT_MAX_LENGTH): string {
-  const trimmed = input.slice(0, maxLength);
-  return trimmed
+  const normalized = input.normalize('NFKC').slice(0, maxLength);
+  return normalized
     .replace(SCRIPT_TAG_PATTERN, '')
     .replace(HTML_TAG_PATTERN, '')
     .replace(CONTROL_CHAR_PATTERN, '')
+    .replace(BIDI_AND_ZERO_WIDTH_PATTERN, '')
     .trim();
 }
 

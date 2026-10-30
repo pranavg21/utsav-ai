@@ -25,33 +25,22 @@ describe('Header component', () => {
     expect(h1Elements[0]?.textContent).toContain('UtsavAI');
   });
 
-  it('should trigger onToggleContrast when high contrast toggle is clicked', () => {
+  it('should trigger onToggleContrast and onToggleLargeText', () => {
     const onToggleContrast = vi.fn();
+    const onToggleLargeText = vi.fn();
     render(
       <Header
         onSelectPreset={vi.fn()}
         onToggleContrast={onToggleContrast}
-        onToggleLargeText={vi.fn()}
-        isHighContrast={false}
-        isLargeText={false}
+        onToggleLargeText={onToggleLargeText}
+        isHighContrast={true}
+        isLargeText={true}
       />
     );
     const contrastBtn = screen.getByRole('button', { name: /Toggle high contrast mode/i });
     fireEvent.click(contrastBtn);
     expect(onToggleContrast).toHaveBeenCalledTimes(1);
-  });
 
-  it('should trigger onToggleLargeText when large text toggle is clicked', () => {
-    const onToggleLargeText = vi.fn();
-    render(
-      <Header
-        onSelectPreset={vi.fn()}
-        onToggleContrast={vi.fn()}
-        onToggleLargeText={onToggleLargeText}
-        isHighContrast={false}
-        isLargeText={false}
-      />
-    );
     const textBtn = screen.getByRole('button', { name: /Toggle large text mode/i });
     fireEvent.click(textBtn);
     expect(onToggleLargeText).toHaveBeenCalledTimes(1);
@@ -71,5 +60,31 @@ describe('Header component', () => {
     const presetBtn = screen.getByRole('button', { name: /Load preset: SME Benchmark/i });
     fireEvent.click(presetBtn);
     expect(onSelectPreset).toHaveBeenCalledWith(WEDDING_PRESET);
+  });
+
+  it('should open API key modal and allow saving or clearing runtime key', () => {
+    render(
+      <Header
+        onSelectPreset={vi.fn()}
+        onToggleContrast={vi.fn()}
+        onToggleLargeText={vi.fn()}
+        isHighContrast={false}
+        isLargeText={false}
+      />
+    );
+
+    const configBtn = screen.getByRole('button', { name: /Configure Gemini API key/i });
+    fireEvent.click(configBtn);
+
+    const modalTitle = screen.getByText('Gemini 2.5 Flash API Key');
+    expect(modalTitle).toBeDefined();
+
+    const saveBtn = screen.getByRole('button', { name: 'Save & Connect' });
+    fireEvent.click(saveBtn);
+
+    // Reopen and clear
+    fireEvent.click(configBtn);
+    const clearBtn = screen.getByLabelText('Clear active API key');
+    fireEvent.click(clearBtn);
   });
 });

@@ -3,7 +3,12 @@
  * Enables data portability, sharing, and backup for users and evaluators.
  */
 
-import type { EventContext, BudgetEvaluationResult, TimelineTask, VendorQuote } from '../types/planner';
+import type {
+  EventContext,
+  BudgetEvaluationResult,
+  TimelineTask,
+  VendorQuote,
+} from '../types/planner';
 
 /** Complete celebration plan export payload structure. */
 export interface CelebrationPlanExport {

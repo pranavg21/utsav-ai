@@ -6,7 +6,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildExportPayload, downloadPlanJson } from '../utils/exportPlan';
 import { WEDDING_PRESET } from '../data/presets';
-import { buildInitialBudgetItems, evaluateBudgetAndTradeoffs } from '../services/budgetTradeoffEngine';
+import {
+  buildInitialBudgetItems,
+  evaluateBudgetAndTradeoffs,
+} from '../services/budgetTradeoffEngine';
 import { buildTimeline } from '../services/timelineDependencyGraph';
 import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
 

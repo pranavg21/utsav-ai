@@ -46,7 +46,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
    * @param error - The caught Error object.
    * @param errorInfo - React component stack information.
    */
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     logger.error('Unhandled component error caught by ErrorBoundary', {
       error: error.message,
       componentStack: errorInfo.componentStack ?? '',
@@ -65,10 +65,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
    *
    * @returns The rendered React node.
    */
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 p-8" role="alert">
+        <div
+          className="flex min-h-screen items-center justify-center bg-slate-950 p-8"
+          role="alert"
+        >
           <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-slate-900 p-8 text-center shadow-2xl">
             <h1 className="mb-3 text-2xl font-bold text-red-400">Something went wrong</h1>
             <p className="mb-6 text-sm text-slate-400">{this.state.errorMessage}</p>

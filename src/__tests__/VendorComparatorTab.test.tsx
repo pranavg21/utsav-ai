@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unit tests for VendorComparatorTab component.
- * Verifies vendor quote card rendering, quote verification toggle, and raw quote paste parsing.
+ * Verifies quote cards, verification toggle, category selector, and quote parsing.
  */
 
 import React from 'react';
@@ -13,7 +13,7 @@ import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
 describe('VendorComparatorTab component', () => {
   const quotes = getPresetVendorQuotes(WEDDING_PRESET.occasion);
 
-  it('should render vendor quote cards and quote paste area', () => {
+  it('renders vendor quote cards and quote paste area', () => {
     render(
       <VendorComparatorTab
         quotes={quotes}
@@ -29,25 +29,33 @@ describe('VendorComparatorTab component', () => {
     expect(screen.getByLabelText(/Raw vendor quote text/i)).toBeDefined();
   });
 
-  it('should toggle verified status when toggle button is clicked', () => {
+  it('toggles verified status and handles empty quote submit', () => {
     const onToggleVerified = vi.fn();
+    const onAddQuote = vi.fn();
+
     render(
       <VendorComparatorTab
         quotes={quotes}
         context={WEDDING_PRESET}
         categoryBudgets={{ 'Catering & Hospitality': 280000 }}
         onToggleVerified={onToggleVerified}
-        onAddQuote={vi.fn()}
+        onAddQuote={onAddQuote}
       />
     );
 
     const toggleButtons = screen.getAllByRole('button', { name: /Toggle verification for/i });
-    expect(toggleButtons.length).toBeGreaterThan(0);
-    fireEvent.click(toggleButtons[0]!);
+    if (toggleButtons[0]) {
+      fireEvent.click(toggleButtons[0]);
+    }
     expect(onToggleVerified).toHaveBeenCalledTimes(1);
+
+    // Click parse when textarea is empty
+    const parseBtn = screen.getByRole('button', { name: /Analyze pasted quote/i });
+    fireEvent.click(parseBtn);
+    expect(onAddQuote).not.toHaveBeenCalled();
   });
 
-  it('should parse pasted raw quote and trigger onAddQuote', () => {
+  it('changes category dropdown and parses pasted raw quote', () => {
     const onAddQuote = vi.fn();
     render(
       <VendorComparatorTab
@@ -59,8 +67,13 @@ describe('VendorComparatorTab component', () => {
       />
     );
 
+    const catSelect = screen.getByLabelText('Quote category');
+    fireEvent.change(catSelect, { target: { value: 'Decor & Ambience' } });
+
     const textarea = screen.getByLabelText(/Raw vendor quote text/i);
-    fireEvent.change(textarea, { target: { value: 'Grand Palace quote: ₹350,000 for 300 guests including decor' } });
+    fireEvent.change(textarea, {
+      target: { value: 'Grand Palace quote: ₹350,000 for 300 guests including decor' },
+    });
 
     const parseBtn = screen.getByRole('button', { name: /Analyze pasted quote/i });
     fireEvent.click(parseBtn);

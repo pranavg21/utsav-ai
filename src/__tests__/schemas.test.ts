@@ -8,72 +8,71 @@ import {
   validateEventContext,
   validateChangeRequest,
   validateVendorQuote,
+  safeValidateEventContext,
+  safeValidateChangeRequest,
+  safeValidateVendorQuote,
 } from '../utils/schemas';
 import { WEDDING_PRESET } from '../data/presets';
 
 describe('Zod validation schemas', () => {
-  describe('validateEventContext', () => {
-    it('should validate valid preset context successfully', () => {
+  describe('validateEventContext & safeValidate', () => {
+    it('validates valid preset context and returns okResult', () => {
       const validated = validateEventContext(WEDDING_PRESET);
       expect(validated.occasion).toBe('wedding');
       expect(validated.totalBudget).toBe(800000);
+
+      const safeRes = safeValidateEventContext(WEDDING_PRESET);
+      expect(safeRes.ok).toBe(true);
     });
 
-    it('should throw validation error on invalid occasion', () => {
+    it('throws and returns errResult on invalid occasion or budget', () => {
       const invalid = { ...WEDDING_PRESET, occasion: 'festival' };
       expect(() => validateEventContext(invalid)).toThrow();
-    });
+      expect(safeValidateEventContext(invalid).ok).toBe(false);
 
-    it('should throw validation error on negative budget', () => {
-      const invalid = { ...WEDDING_PRESET, totalBudget: -5000 };
-      expect(() => validateEventContext(invalid)).toThrow();
+      const negBudget = { ...WEDDING_PRESET, totalBudget: -5000 };
+      expect(() => validateEventContext(negBudget)).toThrow();
+      expect(safeValidateEventContext(negBudget).ok).toBe(false);
     });
   });
 
-  describe('validateChangeRequest', () => {
-    it('should validate valid change request payload', () => {
+  describe('validateChangeRequest & safeValidate', () => {
+    it('validates change request payload and returns okResult', () => {
       const valid = { rawPrompt: 'Add 50 guests', guestDelta: 50 };
       const validated = validateChangeRequest(valid);
       expect(validated.rawPrompt).toBe('Add 50 guests');
-      expect(validated.guestDelta).toBe(50);
+      expect(safeValidateChangeRequest(valid).ok).toBe(true);
     });
 
-    it('should throw on empty prompt', () => {
+    it('throws and returns errResult on empty prompt', () => {
       expect(() => validateChangeRequest({ rawPrompt: '' })).toThrow();
+      expect(safeValidateChangeRequest({ rawPrompt: '' }).ok).toBe(false);
     });
   });
 
-  describe('validateVendorQuote', () => {
-    it('should validate valid vendor quote payload', () => {
-      const quote = {
-        id: 'quote-test',
-        vendorName: 'Royal Palace Banquet',
-        category: 'Venue & Logistics',
-        quotedPrice: 320000,
-        guestCapacity: 250,
-        isVerifiedQuote: false,
-        inclusions: ['Hall', 'Chairs'],
-        hiddenRisks: ['Generator surcharge'],
-        clarificationQuestions: ['GST included?'],
-      };
-      const validated = validateVendorQuote(quote);
+  describe('validateVendorQuote & safeValidate', () => {
+    const validQuote = {
+      id: 'quote-test',
+      vendorName: 'Royal Palace Banquet',
+      category: 'Venue & Logistics' as const,
+      quotedPrice: 320000,
+      guestCapacity: 250,
+      isVerifiedQuote: false,
+      inclusions: ['Hall', 'Chairs'],
+      hiddenRisks: ['Generator surcharge'],
+      clarificationQuestions: ['GST included?'],
+    };
+
+    it('validates valid vendor quote and returns okResult', () => {
+      const validated = validateVendorQuote(validQuote);
       expect(validated.vendorName).toBe('Royal Palace Banquet');
-      expect(validated.quotedPrice).toBe(320000);
+      expect(safeValidateVendorQuote(validQuote).ok).toBe(true);
     });
 
-    it('should throw on negative price', () => {
-      const quote = {
-        id: 'quote-test',
-        vendorName: 'Royal Palace Banquet',
-        category: 'Venue & Logistics',
-        quotedPrice: -100,
-        guestCapacity: 250,
-        isVerifiedQuote: false,
-        inclusions: [],
-        hiddenRisks: [],
-        clarificationQuestions: [],
-      };
-      expect(() => validateVendorQuote(quote)).toThrow();
+    it('throws and returns errResult on negative price', () => {
+      const invalid = { ...validQuote, quotedPrice: -100 };
+      expect(() => validateVendorQuote(invalid)).toThrow();
+      expect(safeValidateVendorQuote(invalid).ok).toBe(false);
     });
   });
 });

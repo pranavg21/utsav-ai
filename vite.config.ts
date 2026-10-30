@@ -21,6 +21,22 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/main.tsx',
+        'src/**/*.d.ts',
+        'src/types/**',
+        'src/state/planActions.ts',
+        'src/domain/budget/types.ts',
+        'src/domain/subEvents/types.ts',
+        'src/__tests__/**',
+      ],
+      thresholds: {
+        statements: 90,
+        branches: 85,
+        functions: 90,
+        lines: 90,
+      },
     },
   },
 });

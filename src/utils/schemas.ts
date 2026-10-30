@@ -5,14 +5,10 @@
 
 import { z } from 'zod';
 import type { EventContext, ChangeRequestInput, VendorQuote } from '../types/planner';
+import { type Result, okResult, errResult } from '../types/result';
 
-/** Zod schema for OccasionType union. */
 export const occasionTypeSchema = z.enum(['wedding', 'birthday', 'community']);
-
-/** Zod schema for ExperienceTier union. */
 export const experienceTierSchema = z.enum(['intimate', 'balanced', 'grand']);
-
-/** Zod schema for BudgetCategoryName union. */
 export const budgetCategoryNameSchema = z.enum([
   'Venue & Logistics',
   'Catering & Hospitality',
@@ -21,11 +17,8 @@ export const budgetCategoryNameSchema = z.enum([
   'Entertainment & Rituals',
   'Contingency Reserve',
 ]);
-
-/** Zod schema for AgeGroupSegment union. */
 export const ageGroupSegmentSchema = z.enum(['children', 'adults', 'seniors']);
 
-/** Complete Zod validation schema for EventContext. */
 export const eventContextSchema = z.object({
   occasion: occasionTypeSchema,
   eventName: z.string().min(1).max(200),
@@ -39,15 +32,14 @@ export const eventContextSchema = z.object({
   mustHaves: z.array(z.string()),
 });
 
-/** Complete Zod validation schema for ChangeRequestInput. */
 export const changeRequestInputSchema = z.object({
   rawPrompt: z.string().min(1).max(2000),
   guestDelta: z.number().optional(),
   budgetDeltaPercent: z.number().optional(),
+  costOverrunPercent: z.number().optional(),
   timelineDeltaDays: z.number().optional(),
 });
 
-/** Complete Zod validation schema for VendorQuote. */
 export const vendorQuoteSchema = z.object({
   id: z.string().min(1),
   vendorName: z.string().min(1).max(200),
@@ -60,32 +52,29 @@ export const vendorQuoteSchema = z.object({
   clarificationQuestions: z.array(z.string()),
 });
 
-/**
- * Validates an unknown payload against the EventContext schema.
- *
- * @param input - Data to validate.
- * @returns Validated EventContext.
- */
 export function validateEventContext(input: unknown): EventContext {
   return eventContextSchema.parse(input);
 }
 
-/**
- * Validates an unknown payload against the ChangeRequestInput schema.
- *
- * @param input - Data to validate.
- * @returns Validated ChangeRequestInput.
- */
 export function validateChangeRequest(input: unknown): ChangeRequestInput {
   return changeRequestInputSchema.parse(input);
 }
 
-/**
- * Validates an unknown payload against the VendorQuote schema.
- *
- * @param input - Data to validate.
- * @returns Validated VendorQuote.
- */
 export function validateVendorQuote(input: unknown): VendorQuote {
   return vendorQuoteSchema.parse(input);
+}
+
+export function safeValidateEventContext(input: unknown): Result<EventContext, string> {
+  const p = eventContextSchema.safeParse(input);
+  return p.success ? okResult(p.data) : errResult(p.error.message);
+}
+
+export function safeValidateChangeRequest(input: unknown): Result<ChangeRequestInput, string> {
+  const p = changeRequestInputSchema.safeParse(input);
+  return p.success ? okResult(p.data) : errResult(p.error.message);
+}
+
+export function safeValidateVendorQuote(input: unknown): Result<VendorQuote, string> {
+  const p = vendorQuoteSchema.safeParse(input);
+  return p.success ? okResult(p.data) : errResult(p.error.message);
 }

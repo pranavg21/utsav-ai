@@ -13,25 +13,29 @@ describe('App root component', () => {
     render(<App />);
 
     expect(screen.getByText('UtsavAI')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Switch to Budget Matrix tab/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Switch to Timeline tab/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Switch to Vendor Quotes tab/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Switch to Theme Ideas tab/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Export complete celebration plan as JSON/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Switch to Budget Matrix tab/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Switch to Timeline tab/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Switch to Vendor Quotes tab/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Switch to Theme Ideas tab/i })).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /Export complete celebration plan as JSON/i })
+    ).toBeDefined();
   });
 
-  it('should switch between tabs on click', () => {
+  it('should switch between tabs on click', async () => {
     render(<App />);
 
-    const timelineTabBtn = screen.getByRole('button', { name: /Switch to Timeline tab/i });
+    const timelineTabBtn = screen.getByRole('tab', { name: /Switch to Timeline tab/i });
     fireEvent.click(timelineTabBtn);
 
-    expect(screen.getByText('Critical Path Timeline')).toBeDefined();
+    const timelineHeading = await screen.findByText('Critical Path Timeline');
+    expect(timelineHeading).toBeDefined();
 
-    const vendorTabBtn = screen.getByRole('button', { name: /Switch to Vendor Quotes tab/i });
+    const vendorTabBtn = screen.getByRole('tab', { name: /Switch to Vendor Quotes tab/i });
     fireEvent.click(vendorTabBtn);
 
-    expect(screen.getByText(/Vendor Quote Comparator/i)).toBeDefined();
+    const vendorHeading = await screen.findByText(/Vendor Quote Comparator/i);
+    expect(vendorHeading).toBeDefined();
   });
 
   it('should trigger JSON export on export button click', () => {
@@ -43,7 +47,9 @@ describe('App root component', () => {
 
     render(<App />);
 
-    const exportBtn = screen.getByRole('button', { name: /Export complete celebration plan as JSON/i });
+    const exportBtn = screen.getByRole('button', {
+      name: /Export complete celebration plan as JSON/i,
+    });
     expect(() => fireEvent.click(exportBtn)).not.toThrow();
 
     clickSpy.mockRestore();

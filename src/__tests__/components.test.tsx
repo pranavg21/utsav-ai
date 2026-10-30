@@ -103,7 +103,9 @@ describe('RippleEffectSimulator component', () => {
     render(<RippleEffectSimulator context={WEDDING_PRESET} onApplyChange={onApply} />);
 
     expect(screen.getByLabelText(/Custom change request input/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: /Apply shock: \+20% Expense Overrun/i })).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /Apply shock: \+20% Expense Overrun/i })
+    ).toBeDefined();
     expect(screen.getByRole('button', { name: /Apply shock: \+50 Guests/i })).toBeDefined();
   });
 

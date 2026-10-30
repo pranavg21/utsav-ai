@@ -46,18 +46,27 @@ const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
     }
   }, [context]);
 
-  useEffect(() => { void loadThemes(); }, [loadThemes]);
+  useEffect(() => {
+    void loadThemes();
+  }, [loadThemes]);
 
   return (
     <section aria-label="Personalized theme ideas">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-100">Personalized Theme Ideas</h2>
-        <button onClick={() => void loadThemes()} disabled={loading} className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50" aria-label="Regenerate theme ideas">
+        <button
+          onClick={() => void loadThemes()}
+          disabled={loading}
+          className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50"
+          aria-label="Regenerate theme ideas"
+        >
           {loading ? 'Generating…' : 'Regenerate'}
         </button>
       </div>
       {error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300" role="alert">{error}</div>
+        <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300" role="alert">
+          {error}
+        </div>
       )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {themes.map((theme) => (
@@ -72,18 +81,29 @@ const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
             </span>
             <p className="mb-3 text-xs text-slate-400">{theme.atmosphereSummary}</p>
             <div className="space-y-2 border-t border-slate-700 pt-3">
-              <h4 className="text-xs font-semibold text-slate-300">Multi-Generational Adaptations</h4>
+              <h4 className="text-xs font-semibold text-slate-300">
+                Multi-Generational Adaptations
+              </h4>
               <div className="flex items-start gap-1.5 text-xs text-slate-400">
                 <Baby className="mt-0.5 h-3 w-3 text-pink-400" aria-hidden="true" />
-                <span><strong className="text-pink-300">Children:</strong> {theme.multiGenerationalAdaptations.children}</span>
+                <span>
+                  <strong className="text-pink-300">Children:</strong>{' '}
+                  {theme.multiGenerationalAdaptations.children}
+                </span>
               </div>
               <div className="flex items-start gap-1.5 text-xs text-slate-400">
                 <HeartHandshake className="mt-0.5 h-3 w-3 text-blue-400" aria-hidden="true" />
-                <span><strong className="text-blue-300">Seniors:</strong> {theme.multiGenerationalAdaptations.seniors}</span>
+                <span>
+                  <strong className="text-blue-300">Seniors:</strong>{' '}
+                  {theme.multiGenerationalAdaptations.seniors}
+                </span>
               </div>
               <div className="flex items-start gap-1.5 text-xs text-slate-400">
                 <Accessibility className="mt-0.5 h-3 w-3 text-purple-400" aria-hidden="true" />
-                <span><strong className="text-purple-300">Accessibility:</strong> {theme.multiGenerationalAdaptations.accessibility}</span>
+                <span>
+                  <strong className="text-purple-300">Accessibility:</strong>{' '}
+                  {theme.multiGenerationalAdaptations.accessibility}
+                </span>
               </div>
             </div>
             <div className="mt-3 rounded-lg bg-emerald-500/10 p-2 text-xs text-emerald-300">

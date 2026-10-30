@@ -32,8 +32,12 @@ export function formatINR(amount: number): string {
  * @returns Tailwind CSS class string.
  */
 export function getDeltaColorClass(delta: number): string {
-  if (delta < 0) { return 'text-emerald-400'; }
-  if (delta > 0) { return 'text-red-400'; }
+  if (delta < 0) {
+    return 'text-emerald-400';
+  }
+  if (delta > 0) {
+    return 'text-red-400';
+  }
   return 'text-slate-400';
 }
 
@@ -44,12 +48,16 @@ export function getDeltaColorClass(delta: number): string {
  * @returns A string error message.
  */
 export function extractErrorMessage(error: unknown): string {
-  if (error instanceof Error) { return error.message; }
+  if (error instanceof Error) {
+    return error.message;
+  }
   return String(error);
 }
 
 /** Standard CSS classes for card containers used across dashboard tabs. */
-export const CARD_CLASSES = 'rounded-xl border border-slate-700/50 bg-slate-800/60 p-4 backdrop-blur-sm' as const;
+export const CARD_CLASSES =
+  'rounded-xl border border-slate-700/50 bg-slate-800/60 p-4 backdrop-blur-sm' as const;
 
 /** Standard CSS classes for badge elements. */
-export const BADGE_BASE = 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium' as const;
+export const BADGE_BASE =
+  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium' as const;

@@ -66,7 +66,9 @@ describe('geminiPlannerService', () => {
       for (const theme of themes) {
         expect(theme.id).toBeTruthy();
         expect(theme.title).toBeTruthy();
-        expect(theme.estimatedCostFit).toMatch(/Well Within Budget|Moderate Stretch|Requires Trade-Off/);
+        expect(theme.estimatedCostFit).toMatch(
+          /Well Within Budget|Moderate Stretch|Requires Trade-Off/
+        );
         expect(theme.atmosphereSummary).toBeTruthy();
         expect(theme.multiGenerationalAdaptations.children).toBeTruthy();
         expect(theme.multiGenerationalAdaptations.seniors).toBeTruthy();

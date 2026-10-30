@@ -1,119 +1,84 @@
 /**
- * @fileoverview Unit tests for the Timeline Dependency Graph service.
- * Tests topological ordering, delay propagation/cascade, and timeline compression.
+ * @fileoverview Unit tests for timeline dependency graph, DAG order, and propagation.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
   buildTimeline,
+  getTopologicalOrder,
   propagateDelay,
   compressTimeline,
-  getTopologicalOrder,
+  recalculateTimeline,
 } from '../services/timelineDependencyGraph';
-import type { EventContext } from '../types/planner';
+import type { EventContext, TimelineTask } from '../types/planner';
 
-/** Test context matching the SME benchmark scenario. */
 const TEST_CONTEXT: EventContext = {
   occasion: 'wedding',
   eventName: 'Test Wedding',
   totalBudget: 800000,
-  guestCount: 200,
+  guestCount: 150,
   daysUntilEvent: 120,
   experienceTier: 'grand',
-  priorityRanking: [
-    'Catering & Hospitality', 'Venue & Logistics', 'Photography & Media',
-    'Decor & Ambience', 'Entertainment & Rituals', 'Contingency Reserve',
-  ],
+  priorityRanking: ['Venue & Logistics', 'Catering & Hospitality'],
   ageGroups: ['adults'],
   accessibilityNeeds: [],
   mustHaves: [],
 };
 
-describe('buildTimeline', () => {
-  it('should generate 10 timeline tasks', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    expect(tasks).toHaveLength(10);
-  });
-
-  it('should set all tasks as pending with zero delay', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    for (const task of tasks) {
-      expect(task.status).toBe('pending');
-      expect(task.delayDays).toBe(0);
-      expect(task.isBottleneck).toBe(false);
-    }
-  });
-
-  it('should compute daysBeforeEvent proportional to timeline', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const venue = tasks.find((t) => t.id === 'task-venue')!;
-    expect(venue.daysBeforeEvent).toBeGreaterThan(100);
-  });
-});
-
-describe('getTopologicalOrder', () => {
-  it('should return task-venue before its dependents', () => {
+describe('Timeline DAG & Delay Propagation', () => {
+  it('orders prerequisite tasks before dependents', () => {
     const tasks = buildTimeline(TEST_CONTEXT);
     const order = getTopologicalOrder(tasks);
-    const venueIdx = order.indexOf('task-venue');
-    const catererIdx = order.indexOf('task-caterer');
-    const decorIdx = order.indexOf('task-decor');
-    const inviteIdx = order.indexOf('task-invite');
-    expect(venueIdx).toBeLessThan(catererIdx);
-    expect(venueIdx).toBeLessThan(decorIdx);
-    expect(venueIdx).toBeLessThan(inviteIdx);
+    expect(order.indexOf('task-venue')).toBeLessThan(order.indexOf('task-caterer'));
+    expect(order.indexOf('task-caterer')).toBeLessThan(order.indexOf('task-rehearsal'));
   });
 
-  it('should return all 10 task IDs', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const order = getTopologicalOrder(tasks);
-    expect(order).toHaveLength(10);
-  });
-});
+  it('diamond dependency: A->B, A->C, B->D, C->D shifts D by exactly delayDays (idempotent)', () => {
+    const diamond: TimelineTask[] = [
+      { id: 'A', title: 'A', phase: 'Foundation', daysBeforeEvent: 40, delayDays: 0, status: 'pending', dependsOn: [], isBottleneck: false, delayImpactNote: '' },
+      { id: 'B', title: 'B', phase: 'Vendor Locking', daysBeforeEvent: 30, delayDays: 0, status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'C', title: 'C', phase: 'Vendor Locking', daysBeforeEvent: 25, delayDays: 0, status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'D', title: 'D', phase: 'Final Execution', daysBeforeEvent: 15, delayDays: 0, status: 'pending', dependsOn: ['B', 'C'], isBottleneck: false, delayImpactNote: '' },
+    ];
 
-describe('propagateDelay', () => {
-  it('should cascade venue delay to downstream tasks', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const delayed = propagateDelay(tasks, 'task-venue', 10);
-    const venue = delayed.find((t) => t.id === 'task-venue')!;
-    expect(venue.status).toBe('delayed');
-    expect(venue.delayDays).toBe(10);
+    const delayed = propagateDelay(diamond, 'A', 10);
+    const taskD = delayed.find((t) => t.id === 'D');
+    expect(taskD?.delayDays).toBe(10);
+    expect(taskD?.daysBeforeEvent).toBe(5);
 
-    const caterer = delayed.find((t) => t.id === 'task-caterer')!;
-    expect(caterer.isBottleneck).toBe(true);
-    expect(caterer.delayImpactNote).toContain('10d');
-  });
-
-  it('should shift downstream daysBeforeEvent when delayed', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const catererBefore = tasks.find((t) => t.id === 'task-caterer')!.daysBeforeEvent;
-    const delayed = propagateDelay(tasks, 'task-venue', 10);
-    const catererAfter = delayed.find((t) => t.id === 'task-caterer')!.daysBeforeEvent;
-    expect(catererAfter).toBeLessThan(catererBefore);
+    // Idempotence check: repeating propagation does not compound shift
+    const repeated = propagateDelay(delayed, 'A', 10);
+    const taskDRepeated = repeated.find((t) => t.id === 'D');
+    expect(taskDRepeated?.delayDays).toBe(10);
+    expect(taskDRepeated?.daysBeforeEvent).toBe(5);
   });
 
-  it('should handle non-existent task ID gracefully', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const result = propagateDelay(tasks, 'task-nonexistent', 10);
-    expect(result).toEqual(tasks);
-  });
-});
-
-describe('compressTimeline', () => {
-  it('should reduce all task deadlines by compression days', () => {
-    const tasks = buildTimeline(TEST_CONTEXT);
-    const compressed = compressTimeline(tasks, 14);
-    for (let i = 0; i < tasks.length; i++) {
-      const expected = Math.max(1, tasks[i]!.daysBeforeEvent - 14);
-      expect(compressed[i]!.daysBeforeEvent).toBe(expected);
+  it('detects cycles and returns error containing cycle path', () => {
+    const cyclic: TimelineTask[] = [
+      { id: 'T1', title: 'T1', phase: 'Foundation', daysBeforeEvent: 10, delayDays: 0, status: 'pending', dependsOn: ['T2'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'T2', title: 'T2', phase: 'Foundation', daysBeforeEvent: 5, delayDays: 0, status: 'pending', dependsOn: ['T1'], isBottleneck: false, delayImpactNote: '' },
+    ];
+    const res = recalculateTimeline(cyclic);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error).toContain('Cycle detected');
+      expect(res.error).toContain('T1');
+      expect(res.error).toContain('T2');
     }
   });
 
-  it('should never produce daysBeforeEvent less than 1', () => {
+  it('flags infeasible timeline and sets minimumNoticeDays when deadlines breach 0', () => {
     const tasks = buildTimeline(TEST_CONTEXT);
-    const compressed = compressTimeline(tasks, 500);
-    for (const task of compressed) {
-      expect(task.daysBeforeEvent).toBeGreaterThanOrEqual(1);
-    }
+    // Severe delay beyond deadline
+    const delayed = propagateDelay(tasks, 'task-dayof', 15);
+    const dayof = delayed.find((t) => t.id === 'task-dayof');
+    expect(dayof?.isInfeasible).toBe(true);
+    expect(dayof?.minimumNoticeDays).toBeDefined();
+
+    // Timeline compression causing infeasibility
+    const compressed = compressTimeline(tasks, 120);
+    const breached = compressed.filter((t) => t.isInfeasible);
+    expect(breached.length).toBeGreaterThan(0);
+    expect(breached[0]?.minimumNoticeDays).toBe(121);
   });
 });

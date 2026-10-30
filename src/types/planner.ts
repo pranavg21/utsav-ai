@@ -87,6 +87,10 @@ export interface TradeOffScenario {
   readonly revisedTotalSpend: number;
   /** Total amount saved compared to the overrun projection in INR (₹). */
   readonly totalSavings: number;
+  /** Whether the trade-off fully resolves the overrun without breaking category floors. */
+  readonly isFeasible?: boolean | undefined;
+  /** Additional funds required if trade-off cannot fully absorb the overrun in INR. */
+  readonly requiredAdditionalFunds?: number | undefined;
   /** Category-by-category adjustments showing exact rupee deltas. */
   readonly categoryAdjustments: ReadonlyArray<{
     readonly category: BudgetCategoryName;
@@ -115,6 +119,12 @@ export interface BudgetEvaluationResult {
   readonly items: ReadonlyArray<BudgetCategoryItem>;
   /** Three distinct priority-respecting trade-off options when over budget. */
   readonly tradeOffScenarios: ReadonlyArray<TradeOffScenario>;
+}
+
+export interface CelebrationPreset {
+  readonly id: string;
+  readonly title: string;
+  readonly context: EventContext;
 }
 
 /* Re-export extended types for backwards-compatible single-file imports. */

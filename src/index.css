@@ -57,3 +57,22 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, button, [role="tablist"], .no-print {
+    display: none !important;
+  }
+  main, section, div, table, tr, td, th {
+    box-shadow: none !important;
+    border-color: #cbd5e1 !important;
+    background: transparent !important;
+    color: #0f172a !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+}

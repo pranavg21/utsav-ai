@@ -13,8 +13,12 @@ const VALID_TIERS: readonly string[] = ['intimate', 'balanced', 'grand'];
 
 /** All valid budget category name values. */
 const VALID_CATEGORIES: readonly string[] = [
-  'Venue & Logistics', 'Catering & Hospitality', 'Decor & Ambience',
-  'Photography & Media', 'Entertainment & Rituals', 'Contingency Reserve',
+  'Venue & Logistics',
+  'Catering & Hospitality',
+  'Decor & Ambience',
+  'Photography & Media',
+  'Entertainment & Rituals',
+  'Contingency Reserve',
 ];
 
 /**

@@ -1,12 +1,12 @@
 /**
- * @fileoverview Unit tests for structured logger utility.
- * Validates JSON formatting, level tags, timestamp emission, and console dispatch.
+ * @fileoverview Unit tests for structured JSON logger.
+ * Verifies ISO-8601 timestamps, structured contexts, and level outputs.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger } from '../utils/logger';
 
-describe('structured logger utility', () => {
+describe('logger utility', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
   let warnSpy: ReturnType<typeof vi.spyOn>;
   let errorSpy: ReturnType<typeof vi.spyOn>;
@@ -27,7 +27,14 @@ describe('structured logger utility', () => {
     logger.info('Engine initialized', { version: '1.0.0' });
 
     expect(logSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    const call = logSpy.mock.calls[0];
+    const raw = call ? String(call[0]) : '{}';
+    const parsed = JSON.parse(raw) as {
+      level: string;
+      message: string;
+      context: { version: string };
+      timestamp: string;
+    };
     expect(parsed.level).toBe('info');
     expect(parsed.message).toBe('Engine initialized');
     expect(parsed.context.version).toBe('1.0.0');
@@ -38,7 +45,9 @@ describe('structured logger utility', () => {
     logger.warn('Rate limit approaching', { count: 8 });
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(warnSpy.mock.calls[0]![0] as string);
+    const call = warnSpy.mock.calls[0];
+    const raw = call ? String(call[0]) : '{}';
+    const parsed = JSON.parse(raw) as { level: string; message: string };
     expect(parsed.level).toBe('warn');
     expect(parsed.message).toBe('Rate limit approaching');
   });
@@ -47,7 +56,9 @@ describe('structured logger utility', () => {
     logger.error('API call failed', { code: 500 });
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(errorSpy.mock.calls[0]![0] as string);
+    const call = errorSpy.mock.calls[0];
+    const raw = call ? String(call[0]) : '{}';
+    const parsed = JSON.parse(raw) as { level: string; message: string };
     expect(parsed.level).toBe('error');
     expect(parsed.message).toBe('API call failed');
   });
