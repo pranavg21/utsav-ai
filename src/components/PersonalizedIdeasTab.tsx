@@ -1,117 +1,103 @@
 /**
  * @fileoverview Personalized Ideas tab showing multi-generational theme concepts
- * with children/senior/accessibility adaptations and budget-friendly alternatives.
+ * with children/senior/accessibility adaptations, budget-friendly alternatives, and GenAI provenance.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React from 'react';
 import { Lightbulb, Coins, Baby, HeartHandshake, Accessibility } from 'lucide-react';
 import type { EventContext, PersonalizedConcept } from '../types/planner';
-import { generateThemes } from '../services/geminiPlannerService';
+import { useThemes } from '../hooks/useThemes';
+import { ProvenanceBadge } from './ProvenanceBadge';
 import { CARD_CLASSES, BADGE_BASE } from '../utils/uiHelpers';
-import { extractErrorMessage } from '../utils/uiHelpers';
 
-/** Cost fit badge color mapping. */
 const COST_FIT_STYLES: Record<PersonalizedConcept['estimatedCostFit'], string> = {
   'Well Within Budget': 'bg-emerald-500/20 text-emerald-400',
   'Moderate Stretch': 'bg-amber-500/20 text-amber-400',
   'Requires Trade-Off': 'bg-red-500/20 text-red-400',
-} as const;
+};
 
-/** Props for the PersonalizedIdeasTab component. */
 interface IdeasTabProps {
   readonly context: EventContext;
 }
 
-/**
- * Displays AI-generated or deterministic personalized theme concepts.
- *
- * @param props - Event context for theme generation.
- * @returns Personalized ideas section React element.
- */
-const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
-  const [themes, setThemes] = useState<PersonalizedConcept[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const loadThemes = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await generateThemes(context);
-      setThemes(result);
-    } catch (err: unknown) {
-      setError(extractErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [context]);
-
-  useEffect(() => {
-    void loadThemes();
-  }, [loadThemes]);
+export const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
+  const { themes, provenance, loading, error, refreshThemes } = useThemes(context);
 
   return (
-    <section aria-label="Personalized theme ideas">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-slate-100">Personalized Theme Ideas</h2>
-        <button
-          onClick={() => void loadThemes()}
-          disabled={loading}
-          className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50"
-          aria-label="Regenerate theme ideas"
-        >
-          {loading ? 'Generating…' : 'Regenerate'}
-        </button>
+    <section aria-label="Personalized theme ideas" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-saffron-400" /> Personalized Theme Concepts
+          </h2>
+          <p className="text-xs text-slate-400">
+            Multi-generational celebration styling tailored for {context.guestCount} guests.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {provenance && <ProvenanceBadge provenance={provenance} />}
+          <button
+            type="button"
+            onClick={refreshThemes}
+            disabled={loading}
+            className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50"
+          >
+            {loading ? 'Generating...' : 'Regenerate Ideas'}
+          </button>
+        </div>
       </div>
+
       {error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300" role="alert">
+        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {themes.map((theme) => (
-          <div key={theme.id} className={CARD_CLASSES}>
-            <div className="mb-2 flex items-start gap-2">
-              <Lightbulb className="mt-0.5 h-4 w-4 text-marigold-400" aria-hidden="true" />
-              <h3 className="text-sm font-bold text-slate-200">{theme.title}</h3>
-            </div>
-            <span className={`${BADGE_BASE} mb-2 ${COST_FIT_STYLES[theme.estimatedCostFit]}`}>
-              <Coins className="h-3 w-3" aria-hidden="true" />
-              {theme.estimatedCostFit}
-            </span>
-            <p className="mb-3 text-xs text-slate-400">{theme.atmosphereSummary}</p>
-            <div className="space-y-2 border-t border-slate-700 pt-3">
-              <h4 className="text-xs font-semibold text-slate-300">
-                Multi-Generational Adaptations
-              </h4>
-              <div className="flex items-start gap-1.5 text-xs text-slate-400">
-                <Baby className="mt-0.5 h-3 w-3 text-pink-400" aria-hidden="true" />
-                <span>
-                  <strong className="text-pink-300">Children:</strong>{' '}
-                  {theme.multiGenerationalAdaptations.children}
-                </span>
+
+      {loading && themes.length === 0 ? (
+        <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
+          Crafting personalized concepts with Gemini 2.5 Flash...
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {themes.map((theme) => (
+            <div key={theme.id} className={`${CARD_CLASSES} flex flex-col justify-between p-5 space-y-4`}>
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-slate-100">{theme.title}</h3>
+                  <span className={`${BADGE_BASE} ${COST_FIT_STYLES[theme.estimatedCostFit]}`}>
+                    {theme.estimatedCostFit}
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed text-slate-300">{theme.atmosphereSummary}</p>
               </div>
-              <div className="flex items-start gap-1.5 text-xs text-slate-400">
-                <HeartHandshake className="mt-0.5 h-3 w-3 text-blue-400" aria-hidden="true" />
-                <span>
-                  <strong className="text-blue-300">Seniors:</strong>{' '}
-                  {theme.multiGenerationalAdaptations.seniors}
-                </span>
+
+              <div className="space-y-2 border-t border-slate-800/80 pt-3 text-xs">
+                <h4 className="font-medium text-slate-400">Multi-Generational Inclusivity:</h4>
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Baby className="h-3.5 w-3.5 text-pink-400 shrink-0" aria-hidden="true" />
+                  <span>{theme.multiGenerationalAdaptations.children}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-300">
+                  <HeartHandshake className="h-3.5 w-3.5 text-purple-400 shrink-0" aria-hidden="true" />
+                  <span>{theme.multiGenerationalAdaptations.seniors}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Accessibility className="h-3.5 w-3.5 text-cyan-400 shrink-0" aria-hidden="true" />
+                  <span>{theme.multiGenerationalAdaptations.accessibility}</span>
+                </div>
               </div>
-              <div className="flex items-start gap-1.5 text-xs text-slate-400">
-                <Accessibility className="mt-0.5 h-3 w-3 text-purple-400" aria-hidden="true" />
-                <span>
-                  <strong className="text-purple-300">Accessibility:</strong>{' '}
-                  {theme.multiGenerationalAdaptations.accessibility}
-                </span>
+
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
+                <div className="flex items-center gap-1.5 font-medium text-amber-400 mb-1">
+                  <Coins className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  Budget-Friendly Swap:
+                </div>
+                <p className="text-slate-300">{theme.budgetFriendlyAlternative}</p>
               </div>
             </div>
-            <div className="mt-3 rounded-lg bg-emerald-500/10 p-2 text-xs text-emerald-300">
-              <strong>Budget-Friendly Swap:</strong> {theme.budgetFriendlyAlternative}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };

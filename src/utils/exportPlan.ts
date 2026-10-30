@@ -9,6 +9,16 @@ import type {
   TimelineTask,
   VendorQuote,
 } from '../types/planner';
+import type { VendorChecklistItem } from '../domain/vendors/types';
+
+/** Input bundle for serialization. */
+export interface PlanExportData {
+  readonly context: EventContext;
+  readonly budget: BudgetEvaluationResult;
+  readonly timeline: ReadonlyArray<TimelineTask>;
+  readonly vendors: ReadonlyArray<VendorQuote>;
+  readonly checklist?: ReadonlyArray<VendorChecklistItem> | undefined;
+}
 
 /** Complete celebration plan export payload structure. */
 export interface CelebrationPlanExport {
@@ -18,53 +28,34 @@ export interface CelebrationPlanExport {
   readonly budget: BudgetEvaluationResult;
   readonly timeline: ReadonlyArray<TimelineTask>;
   readonly vendors: ReadonlyArray<VendorQuote>;
+  readonly checklist: ReadonlyArray<VendorChecklistItem>;
 }
 
 /**
  * Builds the serializable export payload object.
- *
- * @param context - Current event configuration.
- * @param budget - Evaluated budget and tradeoffs.
- * @param timeline - List of scheduled tasks.
- * @param vendors - Compared vendor quotes.
- * @returns Complete celebration plan export payload.
  */
-export function buildExportPayload(
-  context: EventContext,
-  budget: BudgetEvaluationResult,
-  timeline: ReadonlyArray<TimelineTask>,
-  vendors: ReadonlyArray<VendorQuote>
-): CelebrationPlanExport {
+export function buildExportPayload(data: PlanExportData): CelebrationPlanExport {
   return {
     exportVersion: '1.0.0',
     exportedAt: new Date().toISOString(),
-    context,
-    budget,
-    timeline,
-    vendors,
+    context: data.context,
+    budget: data.budget,
+    timeline: data.timeline,
+    vendors: data.vendors,
+    checklist: data.checklist ?? [],
   };
 }
 
 /**
  * Serializes and triggers browser download of the complete celebration plan.
- *
- * @param context - Current event configuration.
- * @param budget - Evaluated budget and tradeoffs.
- * @param timeline - List of scheduled tasks.
- * @param vendors - Compared vendor quotes.
  */
-export function downloadPlanJson(
-  context: EventContext,
-  budget: BudgetEvaluationResult,
-  timeline: ReadonlyArray<TimelineTask>,
-  vendors: ReadonlyArray<VendorQuote>
-): void {
-  const payload = buildExportPayload(context, budget, timeline, vendors);
+export function downloadPlanJson(data: PlanExportData): void {
+  const payload = buildExportPayload(data);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `utsavai-plan-${context.occasion}-${Date.now()}.json`;
+  anchor.download = `utsavai-plan-${data.context.occasion}-${Date.now()}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

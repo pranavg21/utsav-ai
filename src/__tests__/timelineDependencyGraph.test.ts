@@ -4,12 +4,14 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  buildTimeline,
+  buildInitialCelebrationTasks as buildTimeline,
   getTopologicalOrder,
+} from '../domain/timeline/graph';
+import {
   propagateDelay,
   compressTimeline,
   recalculateTimeline,
-} from '../services/timelineDependencyGraph';
+} from '../domain/timeline/propagate';
 import type { EventContext, TimelineTask } from '../types/planner';
 
 const TEST_CONTEXT: EventContext = {
@@ -28,7 +30,10 @@ const TEST_CONTEXT: EventContext = {
 describe('Timeline DAG & Delay Propagation', () => {
   it('orders prerequisite tasks before dependents', () => {
     const tasks = buildTimeline(TEST_CONTEXT);
-    const order = getTopologicalOrder(tasks);
+    const result = getTopologicalOrder(tasks);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const order = result.value;
     expect(order.indexOf('task-venue')).toBeLessThan(order.indexOf('task-caterer'));
     expect(order.indexOf('task-caterer')).toBeLessThan(order.indexOf('task-rehearsal'));
   });

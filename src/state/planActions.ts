@@ -10,6 +10,7 @@ import type {
   VendorQuote,
 } from '../types/planner';
 import type { ChangeRequestInput } from '../types/plannerExtended';
+import type { VendorChecklistItem, VendorChecklistStatus } from '../domain/vendors/types';
 
 export type LifecycleAction =
   | { readonly type: 'LOAD_PRESET'; readonly payload: CelebrationPreset }
@@ -40,6 +41,19 @@ export type DomainAction =
           readonly budgetSharePercent?: number | undefined;
         };
       };
+    }
+  | {
+      readonly type: 'UPDATE_CHECKLIST_STATUS';
+      readonly payload: {
+        readonly itemId: string;
+        readonly status: VendorChecklistStatus;
+        readonly advancePaid?: number | undefined;
+        readonly bookedPrice?: number | undefined;
+      };
+    }
+  | {
+      readonly type: 'SET_CHECKLIST';
+      readonly payload: readonly VendorChecklistItem[];
     };
 
 export type PlanAction = LifecycleAction | DomainAction;

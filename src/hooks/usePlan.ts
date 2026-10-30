@@ -20,7 +20,10 @@ import {
   selectCategoryBudgets,
   selectBottlenecks,
   selectSubEventRollup,
+  selectChecklistSummary,
+  selectOverdueVendors,
 } from '../state/selectors';
+import type { VendorChecklistItem, VendorChecklistStatus, VendorChecklistSummary } from '../domain/vendors/types';
 
 export interface UsePlanReturn {
   readonly state: PlanState;
@@ -28,10 +31,9 @@ export interface UsePlanReturn {
     readonly evaluation: BudgetEvaluationResult;
     readonly categoryBudgets: Record<string, number>;
     readonly bottlenecks: TimelineTask[];
-    readonly subEventRollup: {
-      readonly totalSubEventGuests: number;
-      readonly totalSharePercent: number;
-    };
+    readonly subEventRollup: { readonly totalSubEventGuests: number; readonly totalSharePercent: number };
+    readonly checklistSummary: VendorChecklistSummary;
+    readonly overdueVendors: readonly VendorChecklistItem[];
   };
   readonly actions: {
     readonly loadPreset: (preset: CelebrationPreset) => void;
@@ -43,6 +45,12 @@ export interface UsePlanReturn {
     readonly setTaskStatus: (taskId: string, status: TaskStatus, delayDays?: number) => void;
     readonly addQuote: (quote: VendorQuote) => void;
     readonly toggleQuoteVerified: (quoteId: string) => void;
+    readonly updateChecklistStatus: (
+      itemId: string,
+      status: VendorChecklistStatus,
+      options?: { readonly advancePaid?: number | undefined; readonly bookedPrice?: number | undefined }
+    ) => void;
+    readonly setChecklist: (checklist: readonly VendorChecklistItem[]) => void;
   };
 }
 
@@ -55,46 +63,38 @@ export function usePlan(
   const categoryBudgets = useMemo(() => selectCategoryBudgets(state), [state]);
   const bottlenecks = useMemo(() => selectBottlenecks(state), [state]);
   const subEventRollup = useMemo(() => selectSubEventRollup(state), [state]);
+  const checklistSummary = useMemo(() => selectChecklistSummary(state), [state]);
+  const overdueVendors = useMemo(() => selectOverdueVendors(state), [state]);
 
-  const loadPreset = useCallback((preset: CelebrationPreset) => {
-    dispatch({ type: 'LOAD_PRESET', payload: preset });
-  }, []);
+  const loadPreset = useCallback((preset: CelebrationPreset) => dispatch({ type: 'LOAD_PRESET', payload: preset }), []);
+  const updateContext = useCallback((updates: Partial<EventContext>) => dispatch({ type: 'UPDATE_CONTEXT', payload: updates }), []);
+  const applyChange = useCallback((change: ChangeRequestInput) => dispatch({ type: 'APPLY_CHANGE', payload: change }), []);
+  const setProjected = useCallback((categoryId: string, amount: number) => dispatch({ type: 'SET_PROJECTED', payload: { categoryId, amount } }), []);
+  const toggleVerified = useCallback((categoryId: string) => dispatch({ type: 'TOGGLE_VERIFIED', payload: { categoryId } }), []);
+  const applyTradeoff = useCallback((scenario: TradeOffScenario) => dispatch({ type: 'APPLY_TRADEOFF', payload: { scenario } }), []);
+  const setTaskStatus = useCallback((taskId: string, status: TaskStatus, delayDays?: number) => dispatch({ type: 'SET_TASK_STATUS', payload: { taskId, status, delayDays } }), []);
+  const addQuote = useCallback((quote: VendorQuote) => dispatch({ type: 'ADD_QUOTE', payload: quote }), []);
+  const toggleQuoteVerified = useCallback((quoteId: string) => dispatch({ type: 'TOGGLE_QUOTE_VERIFIED', payload: { quoteId } }), []);
 
-  const updateContext = useCallback((updates: Partial<EventContext>) => {
-    dispatch({ type: 'UPDATE_CONTEXT', payload: updates });
-  }, []);
+  const updateChecklistStatus = useCallback(
+    (
+      itemId: string,
+      status: VendorChecklistStatus,
+      options?: { readonly advancePaid?: number | undefined; readonly bookedPrice?: number | undefined }
+    ) => {
+      dispatch({
+        type: 'UPDATE_CHECKLIST_STATUS',
+        payload: { itemId, status, advancePaid: options?.advancePaid, bookedPrice: options?.bookedPrice },
+      });
+    },
+    []
+  );
 
-  const applyChange = useCallback((change: ChangeRequestInput) => {
-    dispatch({ type: 'APPLY_CHANGE', payload: change });
-  }, []);
-
-  const setProjected = useCallback((categoryId: string, amount: number) => {
-    dispatch({ type: 'SET_PROJECTED', payload: { categoryId, amount } });
-  }, []);
-
-  const toggleVerified = useCallback((categoryId: string) => {
-    dispatch({ type: 'TOGGLE_VERIFIED', payload: { categoryId } });
-  }, []);
-
-  const applyTradeoff = useCallback((scenario: TradeOffScenario) => {
-    dispatch({ type: 'APPLY_TRADEOFF', payload: { scenario } });
-  }, []);
-
-  const setTaskStatus = useCallback((taskId: string, status: TaskStatus, delayDays?: number) => {
-    dispatch({ type: 'SET_TASK_STATUS', payload: { taskId, status, delayDays } });
-  }, []);
-
-  const addQuote = useCallback((quote: VendorQuote) => {
-    dispatch({ type: 'ADD_QUOTE', payload: quote });
-  }, []);
-
-  const toggleQuoteVerified = useCallback((quoteId: string) => {
-    dispatch({ type: 'TOGGLE_QUOTE_VERIFIED', payload: { quoteId } });
-  }, []);
+  const setChecklist = useCallback((checklist: readonly VendorChecklistItem[]) => dispatch({ type: 'SET_CHECKLIST', payload: checklist }), []);
 
   return {
     state,
-    derived: { evaluation, categoryBudgets, bottlenecks, subEventRollup },
+    derived: { evaluation, categoryBudgets, bottlenecks, subEventRollup, checklistSummary, overdueVendors },
     actions: {
       loadPreset,
       updateContext,
@@ -105,6 +105,8 @@ export function usePlan(
       setTaskStatus,
       addQuote,
       toggleQuoteVerified,
+      updateChecklistStatus,
+      setChecklist,
     },
   };
 }

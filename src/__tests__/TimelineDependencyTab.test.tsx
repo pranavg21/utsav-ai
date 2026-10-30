@@ -8,7 +8,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import TimelineDependencyTab from '../components/TimelineDependencyTab';
 import { WEDDING_PRESET } from '../data/presets';
-import { buildTimeline } from '../services/timelineDependencyGraph';
+import { buildInitialCelebrationTasks as buildTimeline } from '../domain/timeline/graph';
 import type { TimelineTask } from '../types/planner';
 
 describe('TimelineDependencyTab component', () => {

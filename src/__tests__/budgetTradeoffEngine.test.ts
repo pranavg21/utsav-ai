@@ -3,11 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  buildInitialBudgetItems,
-  evaluateBudgetAndTradeoffs,
-} from '../services/budgetTradeoffEngine';
-import { buildWaterFillingScenario } from '../domain/budget/tradeoffs';
+import { buildInitialBudgetItems } from '../domain/budget/allocation';
+import { evaluateBudgetAndTradeoffs, buildWaterFillingScenario } from '../domain/budget/tradeoffs';
 import type { EventContext } from '../types/planner';
 
 const TEST_CONTEXT: EventContext = {

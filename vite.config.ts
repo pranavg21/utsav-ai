@@ -29,6 +29,8 @@ export default defineConfig({
         'src/state/planActions.ts',
         'src/domain/budget/types.ts',
         'src/domain/subEvents/types.ts',
+        'src/domain/vendors/types.ts',
+        'src/services/gemini/types.ts',
         'src/__tests__/**',
       ],
       thresholds: {

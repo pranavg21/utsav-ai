@@ -3,6 +3,7 @@
  * Provides runtime validation for union string types used across the application.
  */
 
+import { z } from 'zod';
 import type { OccasionType, ExperienceTier, BudgetCategoryName } from '../types/planner';
 
 /** All valid occasion type values. */
@@ -59,6 +60,7 @@ export function isBudgetCategoryName(value: string): value is BudgetCategoryName
  * @returns Array of typed keys.
  */
 export function typedKeys<K extends string>(obj: Record<K, unknown>): K[] {
+  // Justification: Object.keys() returns string[]; cast is sound as obj keys are statically constrained to K.
   return Object.keys(obj) as K[];
 }
 
@@ -70,7 +72,9 @@ export function typedKeys<K extends string>(obj: Record<K, unknown>): K[] {
  */
 export function safeJsonParse<T>(text: string): T | null {
   try {
-    return JSON.parse(text) as T;
+    const parsed: unknown = JSON.parse(text);
+    const result = z.custom<T>().safeParse(parsed);
+    return result.success ? result.data : null;
   } catch {
     return null;
   }

@@ -8,7 +8,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import VendorComparatorTab from '../components/VendorComparatorTab';
 import { WEDDING_PRESET } from '../data/presets';
-import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 
 describe('VendorComparatorTab component', () => {
   const quotes = getPresetVendorQuotes(WEDDING_PRESET.occasion);

@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 import {
-  getPresetVendorQuotes,
   compareQuoteToContext,
   analyzeRawQuoteText,
-} from '../services/vendorQuoteComparator';
+} from '../domain/vendors/normalize';
 import type { EventContext, VendorQuote } from '../types/planner';
 
 /** Test context for vendor comparison. */

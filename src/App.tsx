@@ -14,14 +14,18 @@ import { downloadPlanJson } from './utils/exportPlan';
 
 const BudgetMatrixTab = lazy(() => import('./components/BudgetMatrixTab'));
 const TimelineDependencyTab = lazy(() => import('./components/TimelineDependencyTab'));
+const VendorChecklistTab = lazy(() =>
+  import('./components/VendorChecklistTab').then((m) => ({ default: m.VendorChecklistTab }))
+);
 const VendorComparatorTab = lazy(() => import('./components/VendorComparatorTab'));
 const PersonalizedIdeasTab = lazy(() => import('./components/PersonalizedIdeasTab'));
 
-type TabId = 'budget' | 'timeline' | 'vendor' | 'ideas';
+type TabId = 'budget' | 'timeline' | 'checklist' | 'vendor' | 'ideas';
 
 const TABS: ReadonlyArray<{ readonly id: TabId; readonly label: string }> = [
   { id: 'budget', label: 'Budget Matrix' },
   { id: 'timeline', label: 'Timeline' },
+  { id: 'checklist', label: 'Vendor Checklist' },
   { id: 'vendor', label: 'Vendor Quotes' },
   { id: 'ideas', label: 'Theme Ideas' },
 ];
@@ -58,7 +62,15 @@ const App: React.FC = () => {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={() => downloadPlanJson(state.context, derived.evaluation, state.tasks, state.quotes)}
+            onClick={() =>
+              downloadPlanJson({
+                context: state.context,
+                budget: derived.evaluation,
+                timeline: state.tasks,
+                vendors: state.quotes,
+                checklist: state.checklist,
+              })
+            }
             className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-saffron-500 hover:text-saffron-400"
             aria-label="Export complete celebration plan as JSON"
           >
@@ -69,7 +81,7 @@ const App: React.FC = () => {
         <ContextIntakePanel context={state.context} onUpdate={actions.updateContext} />
         <AssumptionsPanel assumptions={assumptions} onUpdate={setAssumptions} />
         <RippleEffectSimulator context={state.context} onApplyChange={actions.applyChange} />
-        <nav role="tablist" aria-label="Dashboard views" className="flex border-b border-slate-700/60">
+        <nav role="tablist" aria-label="Dashboard views" className="flex border-b border-slate-700/60 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               type="button"
@@ -80,7 +92,7 @@ const App: React.FC = () => {
               tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               aria-label={`Switch to ${tab.label} tab`}
-              className={`border-b-2 px-5 py-2.5 text-sm font-semibold transition ${activeTab === tab.id ? 'border-saffron-500 text-saffron-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
+              className={`border-b-2 px-5 py-2.5 text-sm font-semibold transition shrink-0 ${activeTab === tab.id ? 'border-saffron-500 text-saffron-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
               aria-selected={activeTab === tab.id}
             >
               {tab.label}
@@ -99,6 +111,13 @@ const App: React.FC = () => {
             )}
             {activeTab === 'timeline' && (
               <TimelineDependencyTab tasks={state.tasks} onToggleStatus={(id, s, d) => actions.setTaskStatus(id, s, d)} />
+            )}
+            {activeTab === 'checklist' && (
+              <VendorChecklistTab
+                items={state.checklist}
+                summary={derived.checklistSummary}
+                onUpdateStatus={actions.updateChecklistStatus}
+              />
             )}
             {activeTab === 'vendor' && (
               <VendorComparatorTab

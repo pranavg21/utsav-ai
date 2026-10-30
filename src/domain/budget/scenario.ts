@@ -1,9 +1,9 @@
 /**
- * @fileoverview Trade-off scenario builder helper extracted from the budget trade-off engine.
+ * @fileoverview Trade-off scenario builder helper.
  * Distributes required savings proportionally across eligible categories using custom weight selectors.
  */
 
-import type { BudgetCategoryItem, TradeOffScenario } from '../types/planner';
+import type { BudgetCategoryItem, TradeOffScenario } from '../../types/planner';
 
 export interface ScenarioBuilderOptions {
   readonly id: string;
@@ -63,3 +63,4 @@ export function buildScenarioOption(options: ScenarioBuilderOptions): TradeOffSc
     categoryAdjustments,
   };
 }
+

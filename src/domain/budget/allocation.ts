@@ -8,29 +8,23 @@ import type {
   EventContext,
 } from '../../types/planner';
 import { typedKeys } from '../../utils/typeGuards';
+import { getCategorySharesForOccasion } from './shares';
 
-/** Baseline percentage shares before user priority weighting is applied. */
-export const BASE_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
-  'Venue & Logistics': 0.26,
-  'Catering & Hospitality': 0.32,
-  'Decor & Ambience': 0.16,
-  'Photography & Media': 0.1,
-  'Entertainment & Rituals': 0.08,
-  'Contingency Reserve': 0.08,
-};
+export { BASE_CATEGORY_SHARES } from './shares';
 
 const PRIORITY_RANK_BOOST_FACTOR = 0.015;
 const DEFAULT_CATEGORY_WEIGHT = 0.1;
 
 /**
- * Builds initial category budget items with priority weighting.
+ * Builds initial category budget items with priority weighting and occasion-tailored shares.
  */
 export function buildInitialBudgetItems(
   context: EventContext,
   simulatedOverrunRatio = 1.0
 ): BudgetCategoryItem[] {
-  const categories = typedKeys(BASE_CATEGORY_SHARES);
-  const rawWeights: Record<BudgetCategoryName, number> = { ...BASE_CATEGORY_SHARES };
+  const baseShares = getCategorySharesForOccasion(context.occasion);
+  const categories = typedKeys(baseShares);
+  const rawWeights: Record<BudgetCategoryName, number> = { ...baseShares };
 
   context.priorityRanking.forEach((category, index) => {
     const rankBoost = (categories.length - index) * PRIORITY_RANK_BOOST_FACTOR;

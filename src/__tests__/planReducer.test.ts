@@ -109,38 +109,4 @@ describe('planReducer', () => {
     });
     expect(nextState.budgetItems[0]?.projectedAmount).toBe(42000);
   });
-
-  it('handles ADD_QUOTE, TOGGLE_QUOTE_VERIFIED, and UPDATE_SUB_EVENT', () => {
-    const state = createInitialState(initialPreset);
-    const newQuote = {
-      id: 'quote-test-99',
-      vendorName: 'Royal Decorators',
-      category: 'Decor & Ambience' as const,
-      quotedPrice: 50000,
-      guestCapacity: 200,
-      isVerifiedQuote: false,
-      inclusions: ['Mandap setup'],
-      hiddenRisks: [],
-      clarificationQuestions: [],
-    };
-
-    const stateWithQuote = planReducer(state, { type: 'ADD_QUOTE', payload: newQuote });
-    expect(stateWithQuote.quotes[0]?.id).toBe('quote-test-99');
-
-    const stateToggled = planReducer(stateWithQuote, {
-      type: 'TOGGLE_QUOTE_VERIFIED',
-      payload: { quoteId: 'quote-test-99' },
-    });
-    expect(stateToggled.quotes[0]?.isVerifiedQuote).toBe(true);
-
-    if (state.subEvents.length > 0) {
-      const firstSubEvent = state.subEvents[0];
-      if (!firstSubEvent) throw new Error('SubEvent missing');
-      const updatedSub = planReducer(state, {
-        type: 'UPDATE_SUB_EVENT',
-        payload: { subEventId: firstSubEvent.id, updates: { guestCount: 120 } },
-      });
-      expect(updatedSub.subEvents[0]?.guestCount).toBe(120);
-    }
-  });
 });

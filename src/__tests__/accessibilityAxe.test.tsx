@@ -10,11 +10,9 @@ import Header from '../components/Header';
 import BudgetMatrixTab from '../components/BudgetMatrixTab';
 import VendorComparatorTab from '../components/VendorComparatorTab';
 import { WEDDING_PRESET } from '../data/presets';
-import {
-  buildInitialBudgetItems,
-  evaluateBudgetAndTradeoffs,
-} from '../services/budgetTradeoffEngine';
-import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
+import { buildInitialBudgetItems } from '../domain/budget/allocation';
+import { evaluateBudgetAndTradeoffs } from '../domain/budget/tradeoffs';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 
 describe('WCAG 2.1 AA Accessibility Audits (vitest-axe)', () => {
   it('Header component has 0 accessibility violations', async () => {

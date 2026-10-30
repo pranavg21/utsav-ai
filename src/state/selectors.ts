@@ -1,10 +1,12 @@
 /**
- * @fileoverview Memoized selectors for evaluating budgets, bottlenecks, and category maps.
+ * @fileoverview Memoized selectors for evaluating budgets, bottlenecks, category maps, and vendor checklists.
  */
 
 import type { PlanState } from './planReducer';
 import type { BudgetEvaluationResult, TimelineTask } from '../types/planner';
 import { evaluateBudgetAndTradeoffs } from '../domain/budget/tradeoffs';
+import type { VendorChecklistItem, VendorChecklistSummary } from '../domain/vendors/types';
+import { calculateChecklistSummary, getOverdueVendors } from '../domain/vendors/checklist';
 
 export function selectEvaluation(state: PlanState): BudgetEvaluationResult {
   return evaluateBudgetAndTradeoffs(state.context, state.budgetItems);
@@ -33,4 +35,12 @@ export function selectSubEventRollup(state: PlanState): {
     totalSharePercent += se.budgetSharePercent;
   }
   return { totalSubEventGuests, totalSharePercent };
+}
+
+export function selectChecklistSummary(state: PlanState): VendorChecklistSummary {
+  return calculateChecklistSummary(state.checklist, state.context.daysUntilEvent);
+}
+
+export function selectOverdueVendors(state: PlanState): readonly VendorChecklistItem[] {
+  return getOverdueVendors(state.checklist, state.context.daysUntilEvent);
 }

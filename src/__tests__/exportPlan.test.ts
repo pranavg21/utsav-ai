@@ -6,21 +6,19 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildExportPayload, downloadPlanJson } from '../utils/exportPlan';
 import { WEDDING_PRESET } from '../data/presets';
-import {
-  buildInitialBudgetItems,
-  evaluateBudgetAndTradeoffs,
-} from '../services/budgetTradeoffEngine';
-import { buildTimeline } from '../services/timelineDependencyGraph';
-import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
+import { buildInitialBudgetItems } from '../domain/budget/allocation';
+import { evaluateBudgetAndTradeoffs } from '../domain/budget/tradeoffs';
+import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 
 describe('exportPlan utility', () => {
   const budgetItems = buildInitialBudgetItems(WEDDING_PRESET);
   const evaluation = evaluateBudgetAndTradeoffs(WEDDING_PRESET, budgetItems);
-  const timeline = buildTimeline(WEDDING_PRESET);
+  const timeline = buildInitialCelebrationTasks(WEDDING_PRESET);
   const vendors = getPresetVendorQuotes(WEDDING_PRESET.occasion);
 
   it('should construct a complete export payload with metadata', () => {
-    const payload = buildExportPayload(WEDDING_PRESET, evaluation, timeline, vendors);
+    const payload = buildExportPayload({ context: WEDDING_PRESET, budget: evaluation, timeline, vendors });
 
     expect(payload.exportVersion).toBe('1.0.0');
     expect(payload.context.occasion).toBe('wedding');
@@ -38,7 +36,7 @@ describe('exportPlan utility', () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     expect(() => {
-      downloadPlanJson(WEDDING_PRESET, evaluation, timeline, vendors);
+      downloadPlanJson({ context: WEDDING_PRESET, budget: evaluation, timeline, vendors });
     }).not.toThrow();
 
     clickSpy.mockRestore();

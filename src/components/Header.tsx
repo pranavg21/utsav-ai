@@ -5,11 +5,7 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles, Key, Eye, Type, Zap } from 'lucide-react';
 import { ALL_PRESETS } from '../data/presets';
-import {
-  getGeminiStatus,
-  setRuntimeApiKey,
-  getActiveApiKey,
-} from '../services/geminiPlannerService';
+import { useGeminiAuth } from '../hooks/useGeminiAuth';
 import type { EventContext } from '../types/planner';
 import { BADGE_BASE } from '../utils/uiHelpers';
 import { ApiKeyModal } from './ApiKeyModal';
@@ -25,21 +21,19 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = React.memo(
   ({ onSelectPreset, onToggleContrast, onToggleLargeText, isHighContrast, isLargeText }) => {
     const [showKeyModal, setShowKeyModal] = useState(false);
-    const [apiKey, setApiKey] = useState(() => getActiveApiKey());
-    const [isConnected, setIsConnected] = useState(() => getGeminiStatus());
+    const { apiKey, isConnected, saveApiKey } = useGeminiAuth();
+    const [keyDraft, setKeyDraft] = useState(apiKey);
 
     const handleSaveKey = useCallback((): void => {
-      setRuntimeApiKey(apiKey);
-      setIsConnected(getGeminiStatus());
+      saveApiKey(keyDraft);
       setShowKeyModal(false);
-    }, [apiKey]);
+    }, [keyDraft, saveApiKey]);
 
     const handleClearKey = useCallback((): void => {
-      setApiKey('');
-      setRuntimeApiKey('');
-      setIsConnected(false);
+      setKeyDraft('');
+      saveApiKey('');
       setShowKeyModal(false);
-    }, []);
+    }, [saveApiKey]);
 
     return (
       <header className="border-b border-slate-700/50 bg-slate-900/80 px-6 py-4 backdrop-blur-md">
@@ -76,7 +70,7 @@ const Header: React.FC<HeaderProps> = React.memo(
               <button
                 type="button"
                 onClick={() => {
-                  setApiKey(getActiveApiKey());
+                  setKeyDraft(apiKey);
                   setShowKeyModal(true);
                 }}
                 className={`${BADGE_BASE} ${isConnected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}
@@ -115,8 +109,8 @@ const Header: React.FC<HeaderProps> = React.memo(
         </div>
         <ApiKeyModal
           isOpen={showKeyModal}
-          apiKey={apiKey}
-          onChangeKey={setApiKey}
+          apiKey={keyDraft}
+          onChangeKey={setKeyDraft}
           onSave={handleSaveKey}
           onClear={handleClearKey}
           onClose={() => setShowKeyModal(false)}

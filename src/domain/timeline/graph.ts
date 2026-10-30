@@ -4,31 +4,18 @@
 
 import type { EventContext, TimelineTask } from '../../types/planner';
 import { type Result, okResult, errResult } from '../../types/result';
+import {
+  WEDDING_TASK_TEMPLATES,
+  getTaskTemplatesForOccasion,
+} from './templates';
 
-export interface TaskTemplate {
-  readonly id: string;
-  readonly title: string;
-  readonly phase: TimelineTask['phase'];
-  readonly timelineFraction: number;
-  readonly dependsOn: readonly string[];
-}
-
-export const TASK_TEMPLATES: readonly TaskTemplate[] = [
-  { id: 'task-venue', title: 'Finalize Venue & Date', phase: 'Foundation', timelineFraction: 0.9, dependsOn: [] },
-  { id: 'task-budget', title: 'Lock Budget Allocation', phase: 'Foundation', timelineFraction: 0.85, dependsOn: ['task-venue'] },
-  { id: 'task-caterer', title: 'Book Caterer', phase: 'Vendor Locking', timelineFraction: 0.75, dependsOn: ['task-venue', 'task-budget'] },
-  { id: 'task-decor', title: 'Lock Decor Concept', phase: 'Vendor Locking', timelineFraction: 0.7, dependsOn: ['task-venue'] },
-  { id: 'task-photo', title: 'Book Photographer & Videographer', phase: 'Vendor Locking', timelineFraction: 0.65, dependsOn: ['task-venue'] },
-  { id: 'task-invite', title: 'Send Invitations', phase: 'Guest & Logistics', timelineFraction: 0.55, dependsOn: ['task-venue'] },
-  { id: 'task-entertain', title: 'Confirm Entertainment & Rituals', phase: 'Guest & Logistics', timelineFraction: 0.45, dependsOn: ['task-budget'] },
-  { id: 'task-logistics', title: 'Arrange Transport & Accommodation', phase: 'Guest & Logistics', timelineFraction: 0.35, dependsOn: ['task-invite'] },
-  { id: 'task-rehearsal', title: 'Final Rehearsal & Vendor Walkthrough', phase: 'Final Execution', timelineFraction: 0.1, dependsOn: ['task-caterer', 'task-decor', 'task-entertain'] },
-  { id: 'task-dayof', title: 'Event Day Coordination', phase: 'Final Execution', timelineFraction: 0.02, dependsOn: ['task-rehearsal'] },
-];
+export type { TaskTemplate } from './templates';
+export const TASK_TEMPLATES = WEDDING_TASK_TEMPLATES;
 
 export function buildInitialCelebrationTasks(context: EventContext): TimelineTask[] {
   const totalDays = Math.max(14, context.daysUntilEvent);
-  const tasks = TASK_TEMPLATES.map((tmpl) => {
+  const templates = getTaskTemplatesForOccasion(context.occasion);
+  const tasks = templates.map((tmpl) => {
     const baseline = Math.max(1, Math.round(totalDays * tmpl.timelineFraction));
     return {
       id: tmpl.id,

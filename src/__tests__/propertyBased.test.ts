@@ -5,7 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { buildInitialBudgetItems } from '../domain/budget/allocation';
-import { propagateDelay, buildInitialCelebrationTasks } from '../services/timelineDependencyGraph';
+import { propagateDelay } from '../domain/timeline/propagate';
+import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
 import { fnv1aHash } from '../utils/cache';
 import type { BudgetCategoryName, EventContext } from '../types/planner';
 

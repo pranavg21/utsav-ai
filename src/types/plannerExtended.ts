@@ -98,3 +98,16 @@ export interface PersonalizedConcept {
   /** Practical low-cost swap if the user finds the initial concept too expensive. */
   readonly budgetFriendlyAlternative: string;
 }
+
+export type DeterministicReason =
+  | 'no-api-key'
+  | 'quota-exceeded'
+  | 'invalid-output'
+  | 'timeout'
+  | 'offline';
+
+export interface ProvenanceBadgeData {
+  readonly source: 'gemini' | 'deterministic';
+  readonly model?: string | undefined;
+  readonly reason?: DeterministicReason | undefined;
+}

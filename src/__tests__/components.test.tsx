@@ -12,7 +12,7 @@ import ContextIntakePanel from '../components/ContextIntakePanel';
 import RippleEffectSimulator from '../components/RippleEffectSimulator';
 import VendorComparatorTab from '../components/VendorComparatorTab';
 import { WEDDING_PRESET } from '../data/presets';
-import { getPresetVendorQuotes } from '../services/vendorQuoteComparator';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 
 describe('Header component', () => {
   it('should render exactly one h1 tag with application title', () => {

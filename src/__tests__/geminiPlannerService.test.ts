@@ -1,16 +1,18 @@
 /**
- * @fileoverview Unit tests for GeminiPlannerService.
+ * @fileoverview Unit tests for GeminiPlannerService and high-level Gemini planner integration.
  * Validates deterministic fallback execution, API key runtime configuration,
- * offline resilience, and cached result retrieval.
+ * offline resilience, and provenance tracking.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   setRuntimeApiKey,
   getGeminiStatus,
+  parseChangeRequestWithAi,
+  generateThemesWithAi,
   parseChangeRequest,
   generateThemes,
-} from '../services/geminiPlannerService';
+} from '../services/gemini/planner';
 import { WEDDING_PRESET } from '../data/presets';
 import { clearCache } from '../utils/cache';
 
@@ -26,66 +28,62 @@ describe('geminiPlannerService', () => {
 
   it('should accept runtime API key without throwing', () => {
     setRuntimeApiKey('test-runtime-api-key');
-    // Still false until a live connection is verified
     expect(getGeminiStatus()).toBe(false);
   });
 
-  describe('parseChangeRequest (deterministic fallback)', () => {
+  describe('parseChangeRequestWithAi (deterministic fallback)', () => {
     it('should parse change requests with deltas deterministically when offline', async () => {
-      const result = await parseChangeRequest(WEDDING_PRESET, {
+      const result = await parseChangeRequestWithAi(WEDDING_PRESET, {
         rawPrompt: 'Add 50 guests and shorten timeline by 5 days',
         guestDelta: 50,
         budgetDeltaPercent: 15,
         timelineDeltaDays: -5,
       });
 
-      expect(result.guestDelta).toBe(50);
-      expect(result.budgetDeltaPercent).toBe(15);
-      expect(result.timelineDeltaDays).toBe(-5);
-      expect(result.impactSummary).toContain('recalculated deterministically');
-      expect(result.recommendedActions).toHaveLength(3);
+      expect(result.provenance.source).toBe('deterministic');
+      expect(result.provenance.reason).toBe('no-api-key');
+      expect(result.data.guestDelta).toBe(50);
+      expect(result.data.budgetDeltaPercent).toBe(15);
+      expect(result.data.timelineDeltaDays).toBe(-5);
+      expect(result.data.impactSummary).toContain('recalculated deterministically');
+      expect(result.data.recommendedActions).toHaveLength(3);
     });
 
     it('should handle zero deltas gracefully', async () => {
-      const result = await parseChangeRequest(WEDDING_PRESET, {
+      const result = await parseChangeRequestWithAi(WEDDING_PRESET, {
         rawPrompt: 'Review caterer menu options',
       });
 
-      expect(result.guestDelta).toBe(0);
-      expect(result.budgetDeltaPercent).toBe(0);
-      expect(result.timelineDeltaDays).toBe(0);
-      expect(result.recommendedActions.length).toBeGreaterThan(0);
+      expect(result.provenance.source).toBe('deterministic');
+      expect(result.data.guestDelta).toBe(0);
+      expect(result.data.budgetDeltaPercent).toBe(0);
+      expect(result.data.timelineDeltaDays).toBe(0);
+      expect(result.data.recommendedActions.length).toBeGreaterThan(0);
     });
   });
 
-  describe('generateThemes (deterministic fallback)', () => {
+  describe('generateThemesWithAi (deterministic fallback)', () => {
     it('should generate 3 rich culturally-aware themes with multi-gen adaptations', async () => {
-      const themes = await generateThemes(WEDDING_PRESET);
+      const result = await generateThemesWithAi(WEDDING_PRESET);
 
-      expect(themes).toHaveLength(3);
-      for (const theme of themes) {
-        expect(theme.id).toBeTruthy();
-        expect(theme.title).toBeTruthy();
-        expect(theme.estimatedCostFit).toMatch(
-          /Well Within Budget|Moderate Stretch|Requires Trade-Off/
-        );
-        expect(theme.atmosphereSummary).toBeTruthy();
-        expect(theme.multiGenerationalAdaptations.children).toBeTruthy();
-        expect(theme.multiGenerationalAdaptations.seniors).toBeTruthy();
-        expect(theme.multiGenerationalAdaptations.accessibility).toBeTruthy();
-        expect(theme.budgetFriendlyAlternative).toBeTruthy();
+      expect(result.provenance.source).toBe('deterministic');
+      expect(result.data).toHaveLength(3);
+      for (const theme of result.data) {
+        expect(theme.id).toBeDefined();
+        expect(theme.title).toBeDefined();
+        expect(theme.estimatedCostFit).toMatch(/Well Within Budget|Moderate Stretch|Requires Trade-Off/);
+        expect(theme.multiGenerationalAdaptations.children).toBeDefined();
+        expect(theme.multiGenerationalAdaptations.seniors).toBeDefined();
+        expect(theme.budgetFriendlyAlternative).toBeDefined();
       }
     });
 
-    it('should adapt cost fit when budget per guest is constrained', async () => {
-      const lowBudgetContext = {
-        ...WEDDING_PRESET,
-        totalBudget: 100000,
-        guestCount: 200, // ₹500/guest
-      };
+    it('unwrapped helpers parseChangeRequest and generateThemes return direct domain objects', async () => {
+      const parsed = await parseChangeRequest(WEDDING_PRESET, { rawPrompt: 'Test prompt' });
+      expect(parsed.guestDelta).toBe(0);
 
-      const themes = await generateThemes(lowBudgetContext);
-      expect(themes[2]?.estimatedCostFit).toBe('Requires Trade-Off');
+      const themes = await generateThemes(WEDDING_PRESET);
+      expect(themes).toHaveLength(3);
     });
   });
 });

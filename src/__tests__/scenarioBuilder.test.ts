@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildScenarioOption } from '../services/scenarioBuilder';
+import { buildScenarioOption } from '../domain/budget/scenario';
 import type { BudgetCategoryItem } from '../types/planner';
 
 const MOCK_ITEMS: BudgetCategoryItem[] = [

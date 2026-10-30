@@ -82,5 +82,24 @@ describe('usePlan hook', () => {
       const updated = result.current.state.tasks.find((t) => t.id === firstTask.id);
       expect(updated?.status).toBe('completed');
     }
+
+    const firstCheck = result.current.state.checklist[0];
+    if (firstCheck) {
+      act(() => {
+        result.current.actions.updateChecklistStatus(firstCheck.id, 'booked', {
+          bookedPrice: 120000,
+          advancePaid: 25000,
+        });
+      });
+      const updatedCheck = result.current.state.checklist.find((c) => c.id === firstCheck.id);
+      expect(updatedCheck?.status).toBe('booked');
+      expect(updatedCheck?.bookedPrice).toBe(120000);
+      expect(updatedCheck?.advancePaid).toBe(25000);
+
+      act(() => {
+        result.current.actions.setChecklist([firstCheck]);
+      });
+      expect(result.current.state.checklist).toHaveLength(1);
+    }
   });
 });

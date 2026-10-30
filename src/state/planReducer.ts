@@ -11,12 +11,20 @@ import type {
 } from '../types/planner';
 import type { PlanAction, LifecycleAction, DomainAction } from './planActions';
 import type { SubEvent } from '../domain/subEvents/types';
-import { WEDDING_SUB_EVENTS } from '../domain/subEvents/types';
+import { getSubEventsForOccasion } from '../domain/subEvents/types';
 import { buildInitialBudgetItems, mergeBudgetAllocations } from '../domain/budget/allocation';
 import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
 import { propagateDelay, compressTimeline } from '../domain/timeline/propagate';
 import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 import type { ChangeRequestInput } from '../types/plannerExtended';
+import type { VendorChecklistItem } from '../domain/vendors/types';
+import { getVendorChecklistTemplates, syncChecklistWithTimeline } from '../domain/vendors/checklist';
+import {
+  handleDomainBudget,
+  handleDomainQuote,
+  handleDomainSubEvent,
+  handleDomainChecklist,
+} from './domainHandlers';
 
 export interface PlanState {
   readonly context: EventContext;
@@ -24,25 +32,37 @@ export interface PlanState {
   readonly tasks: ReadonlyArray<TimelineTask>;
   readonly quotes: ReadonlyArray<VendorQuote>;
   readonly subEvents: ReadonlyArray<SubEvent>;
+  readonly checklist: ReadonlyArray<VendorChecklistItem>;
 }
 
 export function createInitialState(preset: CelebrationPreset): PlanState {
+  const tasks = buildInitialCelebrationTasks(preset.context);
+  const checklist = syncChecklistWithTimeline(
+    getVendorChecklistTemplates(preset.context.occasion),
+    tasks
+  );
+
   return {
     context: preset.context,
     budgetItems: buildInitialBudgetItems(preset.context),
-    tasks: buildInitialCelebrationTasks(preset.context),
+    tasks,
     quotes: getPresetVendorQuotes(preset.context.occasion),
-    subEvents: preset.context.occasion === 'wedding' ? WEDDING_SUB_EVENTS : [],
+    subEvents: getSubEventsForOccasion(preset.context.occasion),
+    checklist,
   };
 }
 
 function handleUpdateContext(state: PlanState, updates: Partial<EventContext>): PlanState {
   const merged = { ...state.context, ...updates };
   const budgetItems = mergeBudgetAllocations(merged, state.budgetItems);
-  const quotes = updates.occasion && updates.occasion !== state.context.occasion
-    ? getPresetVendorQuotes(updates.occasion)
-    : state.quotes;
-  return { ...state, context: merged, budgetItems, quotes };
+  const occasionChanged = updates.occasion && updates.occasion !== state.context.occasion;
+  const quotes = occasionChanged ? getPresetVendorQuotes(updates.occasion) : state.quotes;
+  const subEvents = occasionChanged ? getSubEventsForOccasion(updates.occasion) : state.subEvents;
+  const checklist = occasionChanged
+    ? syncChecklistWithTimeline(getVendorChecklistTemplates(updates.occasion), state.tasks)
+    : state.checklist;
+
+  return { ...state, context: merged, budgetItems, quotes, subEvents, checklist };
 }
 
 function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanState {
@@ -58,7 +78,8 @@ function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanS
     budgetItems = budgetItems.map((item) => ({ ...item, projectedAmount: Math.round(item.projectedAmount * costMult) }));
   }
   const tasks = timelineDeltaDays !== 0 ? compressTimeline(state.tasks, timelineDeltaDays) : state.tasks;
-  return { ...state, context: nextContext, budgetItems, tasks };
+  const checklist = syncChecklistWithTimeline(state.checklist, tasks);
+  return { ...state, context: nextContext, budgetItems, tasks, checklist };
 }
 
 function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 'SET_TASK_STATUS' }>): PlanState {
@@ -66,7 +87,8 @@ function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 
   const tasks = delayDays && delayDays > 0
     ? propagateDelay(state.tasks, taskId, delayDays)
     : state.tasks.map((t) => (t.id === taskId ? { ...t, status } : t));
-  return { ...state, tasks };
+  const checklist = syncChecklistWithTimeline(state.checklist, tasks);
+  return { ...state, tasks, checklist };
 }
 
 function isLifecycleAction(action: PlanAction): action is LifecycleAction {
@@ -79,65 +101,23 @@ function reduceLifecycle(state: PlanState, action: LifecycleAction): PlanState {
     case 'UPDATE_CONTEXT': return handleUpdateContext(state, action.payload);
     case 'APPLY_CHANGE': return handleApplyChange(state, action.payload);
     case 'SET_TASK_STATUS': return handleTaskAction(state, action);
-    default: {
-      const exhaustiveCheck: never = action;
-      return exhaustiveCheck;
-    }
   }
 }
 
 function reduceDomain(state: PlanState, action: DomainAction): PlanState {
   switch (action.type) {
     case 'SET_PROJECTED':
-      return {
-        ...state,
-        budgetItems: state.budgetItems.map((item) =>
-          item.id === action.payload.categoryId ? { ...item, projectedAmount: action.payload.amount } : item
-        ),
-      };
     case 'TOGGLE_VERIFIED':
-      return {
-        ...state,
-        budgetItems: state.budgetItems.map((item) =>
-          item.id === action.payload.categoryId ? { ...item, isVerifiedQuote: !item.isVerifiedQuote } : item
-        ),
-      };
-    case 'APPLY_TRADEOFF': {
-      const adjMap = new Map(action.payload.scenario.categoryAdjustments.map((a) => [a.category, a.revisedAmount]));
-      return {
-        ...state,
-        budgetItems: state.budgetItems.map((item) => {
-          const revised = adjMap.get(item.category);
-          return revised !== undefined ? { ...item, projectedAmount: revised } : item;
-        }),
-      };
-    }
-    case 'ADD_QUOTE': return { ...state, quotes: [action.payload, ...state.quotes] };
+    case 'APPLY_TRADEOFF':
+      return handleDomainBudget(state, action);
+    case 'ADD_QUOTE':
     case 'TOGGLE_QUOTE_VERIFIED':
-      return {
-        ...state,
-        quotes: state.quotes.map((q) => (q.id === action.payload.quoteId ? { ...q, isVerifiedQuote: !q.isVerifiedQuote } : q)),
-      };
-    case 'UPDATE_SUB_EVENT': {
-      const { subEventId, updates } = action.payload;
-      return {
-        ...state,
-        subEvents: state.subEvents.map((se) =>
-          se.id === subEventId
-            ? {
-                ...se,
-                ...(updates.name !== undefined && { name: updates.name }),
-                ...(updates.guestCount !== undefined && { guestCount: updates.guestCount }),
-                ...(updates.budgetSharePercent !== undefined && { budgetSharePercent: updates.budgetSharePercent }),
-              }
-            : se
-        ),
-      };
-    }
-    default: {
-      const exhaustiveCheck: never = action;
-      return exhaustiveCheck;
-    }
+      return handleDomainQuote(state, action);
+    case 'UPDATE_SUB_EVENT':
+      return handleDomainSubEvent(state, action);
+    case 'UPDATE_CHECKLIST_STATUS':
+    case 'SET_CHECKLIST':
+      return handleDomainChecklist(state, action);
   }
 }
 

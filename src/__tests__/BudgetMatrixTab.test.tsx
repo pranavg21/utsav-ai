@@ -8,10 +8,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import BudgetMatrixTab from '../components/BudgetMatrixTab';
 import { WEDDING_PRESET } from '../data/presets';
-import {
-  buildInitialBudgetItems,
-  evaluateBudgetAndTradeoffs,
-} from '../services/budgetTradeoffEngine';
+import { buildInitialBudgetItems } from '../domain/budget/allocation';
+import { evaluateBudgetAndTradeoffs } from '../domain/budget/tradeoffs';
 
 describe('BudgetMatrixTab component', () => {
   const budgetItems = buildInitialBudgetItems(WEDDING_PRESET);
