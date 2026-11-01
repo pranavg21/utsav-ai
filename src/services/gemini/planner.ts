@@ -30,7 +30,7 @@ export async function parseChangeRequestWithAi(
   context: EventContext,
   input: ChangeRequestInput
 ): Promise<AiResult<ParsedChangeResult>> {
-  const fallback = buildDeterministicChangeResult(input);
+  const fallback = buildDeterministicChangeResult(input, context.totalBudget);
   const prompt = buildChangeRequestPrompt(context, input.rawPrompt);
   const cacheKey = fnv1aHash(`${GEMINI_MODEL_ID}:v${SCHEMA_VERSION}:${prompt}`);
   const cached = getCachedResponse<AiResult<ParsedChangeResult>>(cacheKey);
@@ -50,8 +50,11 @@ export async function parseChangeRequestWithAi(
         ? Math.round((result.data.amountDelta / context.totalBudget) * 100)
         : fallback.budgetDeltaPercent,
       timelineDeltaDays: result.data.targetDaysDelta ?? fallback.timelineDeltaDays,
+      ...(fallback.budgetDeltaCurrency !== undefined && { budgetDeltaCurrency: fallback.budgetDeltaCurrency }),
+      ...(fallback.vendorDelay !== undefined && { vendorDelay: fallback.vendorDelay }),
       impactSummary: result.data.reasoning || fallback.impactSummary,
       recommendedActions: fallback.recommendedActions,
+      ...(fallback.unrecognizedFragments !== undefined && { unrecognizedFragments: fallback.unrecognizedFragments }),
     };
     output = { data, provenance: { source: 'gemini', model: result.model } };
     setCachedResponse(cacheKey, output);

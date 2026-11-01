@@ -75,6 +75,8 @@ export interface ChangeRequestInput {
   readonly costOverrunPercent?: number | undefined;
   /** Optional reduction in days until event (e.g., 14 for moving 2 weeks earlier). */
   readonly timelineDeltaDays?: number | undefined;
+  /** Optional vendor-specific task delay (e.g., venue or caterer delay). */
+  readonly vendorDelay?: { readonly taskId: string; readonly days: number } | undefined;
 }
 
 /**

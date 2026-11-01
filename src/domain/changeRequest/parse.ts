@@ -1,14 +1,20 @@
 /**
- * @fileoverview Pure deterministic NLP parser for celebration change requests supporting Hinglish.
+ * @fileoverview Deterministic multi-clause NLP parser for celebration change requests (Hinglish/English).
  */
 
 import { type Result, okResult, errResult } from '../../types/result';
 
 export interface ChangeRequestIntent {
-  readonly target: 'budget' | 'timeline' | 'headcount' | 'scope';
+  readonly target: 'budget' | 'timeline' | 'headcount' | 'scope' | 'vendorDelay';
   readonly delta: number;
   readonly unit: 'currency' | 'days' | 'percent' | 'count';
   readonly description?: string | undefined;
+  readonly taskId?: string | undefined;
+}
+
+export interface ParseIntentsResult {
+  readonly intents: readonly ChangeRequestIntent[];
+  readonly unrecognizedFragments: readonly string[];
 }
 
 function parseMultiplier(token: string): number {
@@ -29,73 +35,78 @@ function extractNumber(text: string): number | null {
   return Math.round(base * mult);
 }
 
-function parseHeadcount(lower: string): Result<ChangeRequestIntent, string> | null {
-  const isGuest = /guest|people|log|mehman|headcount|attendee/i.test(lower) || /zyada|kam|more|less|extra/.test(lower);
-  if (!isGuest || /lakh|budget|rupee|inr|₹|day|week|month|hafta|din/i.test(lower)) return null;
+function parseVendorDelay(lower: string): ChangeRequestIntent | null {
+  if (!/delay|delayed|late/i.test(lower)) return null;
+  let taskId: string | undefined;
+  if (/cater|food|catering/i.test(lower)) taskId = 'task-caterer';
+  else if (/venue|hall|banquet|hotel/i.test(lower)) taskId = 'task-venue';
+  else if (/photo|videograph/i.test(lower)) taskId = 'task-photographer';
+  else if (/decor|mandap/i.test(lower)) taskId = 'task-decorator';
+  if (!taskId) return null;
 
+  const days = extractNumber(lower) ?? 5;
+  return { target: 'vendorDelay', delta: days, unit: 'days', taskId };
+}
+
+function parseHeadcount(lower: string): ChangeRequestIntent | null {
+  const isGuest = /guest|people|log|mehman|headcount|attendee|pax/i.test(lower) || /zyada|more|extra/.test(lower);
+  if (!isGuest) return null;
   const num = extractNumber(lower);
   if (num === null) return null;
   const isNegative = /kam|less|reduce|cut|ghatao|minus|-/i.test(lower);
-  return okResult({
-    target: 'headcount',
-    delta: isNegative ? -num : num,
-    unit: 'count',
-  });
+  return { target: 'headcount', delta: isNegative ? -num : num, unit: 'count' };
 }
 
-function parseTimeline(lower: string): Result<ChangeRequestIntent, string> | null {
+function parseTimeline(lower: string): ChangeRequestIntent | null {
   const isTimeline = /week|day|month|earlier|delay|late|pehle|jaldi|hafta|din/i.test(lower);
   if (!isTimeline) return null;
-
-  const isWeeks = /week|hafte|hafta/i.test(lower);
-  const isMonths = /month|mahina/i.test(lower);
   const rawNum = extractNumber(lower) ?? 1;
-  const days = isMonths ? rawNum * 30 : isWeeks ? rawNum * 7 : rawNum;
+  const days = /month|mahina/i.test(lower) ? rawNum * 30 : /week|hafte|hafta/i.test(lower) ? rawNum * 7 : rawNum;
   const isEarlier = /earlier|pehle|jaldi|advance|before/i.test(lower);
-  return okResult({
-    target: 'timeline',
-    delta: isEarlier ? -days : days,
-    unit: 'days',
-  });
+  return { target: 'timeline', delta: isEarlier ? -days : days, unit: 'days' };
 }
 
-function parseBudget(lower: string): Result<ChangeRequestIntent, string> | null {
+function parseBudget(lower: string): ChangeRequestIntent | null {
   const isPercent = lower.includes('%') || /percent/i.test(lower);
-  const isBudget = isPercent || /budget|lakh|rupee|rs|inr|₹|cost|paisa|kharcha/i.test(lower);
+  const isBudget = isPercent || /budget|lakh|lac|rupee|rs|inr|₹|cost|paisa|kharcha|dropped/i.test(lower);
   if (!isBudget) return null;
-
   const num = extractNumber(lower);
   if (num === null) return null;
-  const isNegative = /cut|less|reduce|save|kam|ghatao|minus|-/i.test(lower);
-  return okResult({
-    target: 'budget',
-    delta: isNegative ? -num : num,
-    unit: isPercent ? 'percent' : 'currency',
-  });
+  const isNegative = /cut|less|reduce|save|kam|ghatao|minus|-|dropped|drop/i.test(lower);
+  return { target: 'budget', delta: isNegative ? -num : num, unit: isPercent ? 'percent' : 'currency' };
+}
+
+function parseClause(clause: string): ChangeRequestIntent | null {
+  const lower = clause.toLowerCase();
+  return (
+    parseVendorDelay(lower) ??
+    parseHeadcount(lower) ??
+    parseBudget(lower) ??
+    parseTimeline(lower) ??
+    (/venue|caterer|decor|theme|taj|hall|dj|mandap|shifted|switch|change/i.test(lower)
+      ? { target: 'scope', delta: 0, unit: 'count', description: clause }
+      : null)
+  );
+}
+
+export function parseAllChangeIntents(rawText: string): ParseIntentsResult {
+  const text = rawText.trim();
+  if (!text) return { intents: [], unrecognizedFragments: [] };
+  const clauses = text.split(/,|;|\band\b|\baur\b/i).map((c) => c.trim()).filter((c) => c.length > 0);
+  const intents: ChangeRequestIntent[] = [];
+  const unrecognizedFragments: string[] = [];
+
+  for (const clause of clauses) {
+    const intent = parseClause(clause);
+    if (intent) intents.push(intent);
+    else unrecognizedFragments.push(clause);
+  }
+  return { intents, unrecognizedFragments };
 }
 
 export function parseChangeRequest(rawText: string): Result<ChangeRequestIntent, string> {
-  const text = rawText.trim();
-  if (!text) return errResult('Empty change request input');
-  const lower = text.toLowerCase();
-
-  const hcResult = parseHeadcount(lower);
-  if (hcResult) return hcResult;
-
-  const bgResult = parseBudget(lower);
-  if (bgResult) return bgResult;
-
-  const tlResult = parseTimeline(lower);
-  if (tlResult) return tlResult;
-
-  if (/venue|caterer|decor|theme|taj|hall|dj|mandap|shifted|switch|change/i.test(lower)) {
-    return okResult({
-      target: 'scope',
-      delta: 0,
-      unit: 'count',
-      description: text,
-    });
-  }
-
-  return errResult(`Unable to extract actionable intent from: "${text}"`);
+  const res = parseAllChangeIntents(rawText);
+  const first = res.intents[0];
+  if (first) return okResult(first);
+  return errResult(`Unable to extract actionable intent from: "${rawText.trim()}"`);
 }
