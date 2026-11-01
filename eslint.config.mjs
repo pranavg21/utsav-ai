@@ -85,6 +85,44 @@ export default [
     },
   },
   {
+    files: ['src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/services/**', '**/state/**', '../services/**', '../state/**', '../../services/**', '../../state/**'],
+              message: 'Components may not import directly from services or state. Access state via props or hooks.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              message: 'Domain modules must remain pure TypeScript without React dependencies.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/services/**', '**/components/**', '../services/**', '../components/**', '../../services/**', '../../components/**'],
+              message: 'Domain modules may not import from services or components.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/logger.ts'],
     rules: {
       'no-console': 'off',
