@@ -67,8 +67,8 @@ function handleUpdateContext(state: PlanState, updates: Partial<EventContext>): 
 }
 
 function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanState {
-  const overrun = payload.costOverrunPercent ?? 0;
   const d = resolveChangeDeltas(payload, state.context.totalBudget);
+  const overrun = d.costOverrunPercent ?? payload.costOverrunPercent ?? 0;
 
   const newGuests = Math.max(1, state.context.guestCount + d.guestDelta);
   const newBudget = Math.round(state.context.totalBudget * (1 + d.budgetDeltaPercent / 100));

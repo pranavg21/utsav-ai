@@ -5,7 +5,7 @@
 import { type Result, okResult, errResult } from '../../types/result';
 
 export interface ChangeRequestIntent {
-  readonly target: 'budget' | 'timeline' | 'headcount' | 'scope' | 'vendorDelay';
+  readonly target: 'budget' | 'timeline' | 'headcount' | 'scope' | 'vendorDelay' | 'costOverrun';
   readonly delta: number;
   readonly unit: 'currency' | 'days' | 'percent' | 'count';
   readonly description?: string | undefined;
@@ -21,6 +21,7 @@ export interface ParsedChangeSummaryInput {
   readonly guestDelta?: number | undefined;
   readonly budgetDeltaPercent?: number | undefined;
   readonly timelineDeltaDays?: number | undefined;
+  readonly costOverrunPercent?: number | undefined;
 }
 
 function parseMultiplier(token: string): number {
@@ -71,9 +72,17 @@ function parseTimeline(lower: string): ChangeRequestIntent | null {
   return { target: 'timeline', delta: isEarlier ? -days : days, unit: 'days' };
 }
 
+function parseCostOverrun(lower: string): ChangeRequestIntent | null {
+  if (!/cost|expense|overrun|kharcha badh|mehenga/i.test(lower)) return null;
+  if (/budget/i.test(lower)) return null;
+  const num = extractNumber(lower);
+  if (num === null) return null;
+  return { target: 'costOverrun', delta: num, unit: 'percent' };
+}
+
 function parseBudget(lower: string): ChangeRequestIntent | null {
   const isPercent = lower.includes('%') || /percent/i.test(lower);
-  const isBudget = isPercent || /budget|lakh|lac|rupee|rs|inr|₹|cost|paisa|kharcha|dropped/i.test(lower);
+  const isBudget = isPercent || /budget|lakh|lac|rupee|rs|inr|₹|paisa|dropped/i.test(lower);
   if (!isBudget) return null;
   const num = extractNumber(lower);
   if (num === null) return null;
@@ -86,6 +95,7 @@ function parseClause(clause: string): ChangeRequestIntent | null {
   return (
     parseVendorDelay(lower) ??
     parseHeadcount(lower) ??
+    parseCostOverrun(lower) ??
     parseBudget(lower) ??
     parseTimeline(lower) ??
     (/venue|caterer|decor|theme|taj|hall|dj|mandap|shifted|switch|change/i.test(lower)
@@ -127,6 +137,7 @@ export function formatChangeSummary(summary: ParsedChangeSummaryInput): string {
     formatItem(summary.guestDelta, ' Guests'),
     formatItem(summary.budgetDeltaPercent, '% Budget'),
     formatItem(summary.timelineDeltaDays, 'd Timeline'),
+    formatItem(summary.costOverrunPercent, '% Cost Overrun'),
   ].filter((item): item is string => item !== null);
   return items.length > 0 ? `Parsed: ${items.join(', ')}` : '';
 }

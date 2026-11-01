@@ -109,4 +109,37 @@ describe('planReducer', () => {
     });
     expect(nextState.budgetItems[0]?.projectedAmount).toBe(42000);
   });
+
+  it('handles +20% expense overrun preset without inflating totalBudget (10.1)', () => {
+    const state = createInitialState(initialPreset);
+    const nextState = planReducer(state, {
+      type: 'APPLY_CHANGE',
+      payload: { rawPrompt: '+20% expense overrun', costOverrunPercent: 20 },
+    });
+    const totalProjected = nextState.budgetItems.reduce((acc, i) => acc + i.projectedAmount, 0);
+    const overrun = totalProjected - nextState.context.totalBudget;
+    expect(nextState.context.totalBudget).toBe(800000);
+    expect(totalProjected).toBe(960000);
+    expect(overrun).toBe(160000);
+  });
+
+  it('handles natural language "Costs went up 20%" as cost overrun with budget unchanged (10.1)', () => {
+    const state = createInitialState(initialPreset);
+    const nextState = planReducer(state, {
+      type: 'APPLY_CHANGE',
+      payload: { rawPrompt: 'Costs went up 20%' },
+    });
+    const totalProjected = nextState.budgetItems.reduce((acc, i) => acc + i.projectedAmount, 0);
+    expect(nextState.context.totalBudget).toBe(800000);
+    expect(totalProjected).toBe(960000);
+  });
+
+  it('handles natural language "budget dropped 10%" dropping budget to 720000 (10.1)', () => {
+    const state = createInitialState(initialPreset);
+    const nextState = planReducer(state, {
+      type: 'APPLY_CHANGE',
+      payload: { rawPrompt: 'budget dropped 10%' },
+    });
+    expect(nextState.context.totalBudget).toBe(720000);
+  });
 });
