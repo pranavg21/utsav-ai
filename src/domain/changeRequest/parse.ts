@@ -17,6 +17,12 @@ export interface ParseIntentsResult {
   readonly unrecognizedFragments: readonly string[];
 }
 
+export interface ParsedChangeSummaryInput {
+  readonly guestDelta?: number | undefined;
+  readonly budgetDeltaPercent?: number | undefined;
+  readonly timelineDeltaDays?: number | undefined;
+}
+
 function parseMultiplier(token: string): number {
   const lower = token.toLowerCase();
   if (lower.includes('lakh') || lower.includes('lac')) return 100000;
@@ -43,7 +49,6 @@ function parseVendorDelay(lower: string): ChangeRequestIntent | null {
   else if (/photo|videograph/i.test(lower)) taskId = 'task-photographer';
   else if (/decor|mandap/i.test(lower)) taskId = 'task-decorator';
   if (!taskId) return null;
-
   const days = extractNumber(lower) ?? 5;
   return { target: 'vendorDelay', delta: days, unit: 'days', taskId };
 }
@@ -109,4 +114,19 @@ export function parseChangeRequest(rawText: string): Result<ChangeRequestIntent,
   const first = res.intents[0];
   if (first) return okResult(first);
   return errResult(`Unable to extract actionable intent from: "${rawText.trim()}"`);
+}
+
+function formatItem(val: number | undefined, suffix: string): string | null {
+  if (!val) return null;
+  const sign = val > 0 ? '+' : '';
+  return `${sign}${val}${suffix}`;
+}
+
+export function formatChangeSummary(summary: ParsedChangeSummaryInput): string {
+  const items = [
+    formatItem(summary.guestDelta, ' Guests'),
+    formatItem(summary.budgetDeltaPercent, '% Budget'),
+    formatItem(summary.timelineDeltaDays, 'd Timeline'),
+  ].filter((item): item is string => item !== null);
+  return items.length > 0 ? `Parsed: ${items.join(', ')}` : '';
 }

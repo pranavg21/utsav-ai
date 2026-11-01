@@ -16,23 +16,32 @@ interface NumericInputFieldProps {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-saffron-500 focus:outline-none';
+  'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-200 ' +
+  'focus:border-saffron-500 focus:outline-none';
 const labelCls = 'mb-1 block text-xs font-medium text-slate-400';
 
 export const NumericInputField: React.FC<NumericInputFieldProps> = React.memo(
   ({ id, label, value, min, max, ariaLabel, onUpdate }) => {
     const [draft, setDraft] = useState(String(value));
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
       setDraft(String(value));
+      setError(null);
     }, [value]);
 
     const handleCommit = (raw: string): void => {
       const parsed = Number(raw.replace(/,/g, ''));
-      if (!Number.isNaN(parsed) && parsed > 0) {
-        onUpdate(validateNumericBound(parsed, min, max));
-      } else {
+      if (Number.isNaN(parsed)) {
         setDraft(String(value));
+        setError(null);
+        return;
+      }
+      if (parsed < min || parsed > max) {
+        setError(`${label} must be at least ${min.toLocaleString('en-IN')}`);
+      } else {
+        setError(null);
+        onUpdate(validateNumericBound(parsed, min, max));
       }
     };
 
@@ -49,14 +58,21 @@ export const NumericInputField: React.FC<NumericInputFieldProps> = React.memo(
           onChange={(e) => {
             setDraft(e.target.value);
             const parsed = Number(e.target.value.replace(/,/g, ''));
-            if (!Number.isNaN(parsed) && parsed > 0) {
+            if (!Number.isNaN(parsed) && parsed >= min && parsed <= max) {
+              setError(null);
               onUpdate(validateNumericBound(parsed, min, max));
             }
           }}
           onBlur={() => handleCommit(draft)}
-          className={inputCls}
+          className={`${inputCls} ${error ? 'border-red-500' : ''}`}
           aria-label={ariaLabel}
+          aria-invalid={error !== null}
         />
+        {error && (
+          <p className="mt-1 text-xs text-red-400 font-medium" role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

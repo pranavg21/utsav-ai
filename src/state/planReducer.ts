@@ -17,6 +17,7 @@ import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
 import { propagateDelay, compressTimeline, recalculateTimeline } from '../domain/timeline/propagate';
 import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 import type { ChangeRequestInput } from '../types/plannerExtended';
+import { resolveChangeDeltas } from '../domain/changeRequest/aggregate';
 import type { VendorChecklistItem } from '../domain/vendors/types';
 import { getVendorChecklistTemplates, syncChecklistWithTimeline } from '../domain/vendors/checklist';
 import {
@@ -66,20 +67,23 @@ function handleUpdateContext(state: PlanState, updates: Partial<EventContext>): 
 }
 
 function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanState {
-  const { guestDelta = 0, budgetDeltaPercent = 0, costOverrunPercent = 0, timelineDeltaDays = 0, vendorDelay } = payload;
-  const newGuests = Math.max(1, state.context.guestCount + guestDelta);
-  const newBudget = Math.round(state.context.totalBudget * (1 + budgetDeltaPercent / 100));
-  const newDays = Math.max(7, state.context.daysUntilEvent - timelineDeltaDays);
+  const overrun = payload.costOverrunPercent ?? 0;
+  const d = resolveChangeDeltas(payload, state.context.totalBudget);
 
+  const newGuests = Math.max(1, state.context.guestCount + d.guestDelta);
+  const newBudget = Math.round(state.context.totalBudget * (1 + d.budgetDeltaPercent / 100));
+  const newDays = Math.max(7, state.context.daysUntilEvent - d.timelineDeltaDays);
   const nextContext: EventContext = { ...state.context, guestCount: newGuests, totalBudget: newBudget, daysUntilEvent: newDays };
-  let budgetItems = mergeBudgetAllocations(nextContext, state.budgetItems);
-  if (costOverrunPercent !== 0) {
-    const costMult = 1 + costOverrunPercent / 100;
-    budgetItems = budgetItems.map((item) => ({ ...item, projectedAmount: Math.round(item.projectedAmount * costMult) }));
-  }
-  let tasks = timelineDeltaDays !== 0 ? compressTimeline(state.tasks, timelineDeltaDays) : state.tasks;
-  if (vendorDelay && vendorDelay.days > 0) {
-    tasks = propagateDelay(tasks, vendorDelay.taskId, vendorDelay.days);
+
+  const rawBudget = mergeBudgetAllocations(nextContext, state.budgetItems);
+  const budgetItems = overrun === 0 ? rawBudget : rawBudget.map((item) => ({
+    ...item,
+    projectedAmount: Math.round(item.projectedAmount * (1 + overrun / 100)),
+  }));
+
+  let tasks = d.timelineDeltaDays !== 0 ? compressTimeline(state.tasks, d.timelineDeltaDays) : state.tasks;
+  if (d.vendorDelay && d.vendorDelay.days > 0) {
+    tasks = propagateDelay(tasks, d.vendorDelay.taskId, d.vendorDelay.days);
   }
   const checklist = syncChecklistWithTimeline(state.checklist, tasks);
   return { ...state, context: nextContext, budgetItems, tasks, checklist };
@@ -98,10 +102,8 @@ function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 
 
 function isLifecycleAction(action: PlanAction): action is LifecycleAction {
   return (
-    action.type === 'LOAD_PRESET' ||
-    action.type === 'UPDATE_CONTEXT' ||
-    action.type === 'APPLY_CHANGE' ||
-    action.type === 'SET_TASK_STATUS'
+    action.type === 'LOAD_PRESET' || action.type === 'UPDATE_CONTEXT' ||
+    action.type === 'APPLY_CHANGE' || action.type === 'SET_TASK_STATUS'
   );
 }
 

@@ -78,6 +78,13 @@ export function analyzeRawQuoteText(
   const effectiveGuests = guestCapacity > 0 ? guestCapacity : defaultGuests;
   const quotedPrice = isPerUnit ? extractedPrice * effectiveGuests : extractedPrice;
   const hasHiddenCharge = /extra|additional|surcharge|not included|excluded/i.test(rawText);
+  const hiddenRisks: string[] = [];
+  if (hasHiddenCharge) {
+    hiddenRisks.push('Potential extra charges detected in quote text');
+  }
+  if (quotedPrice === 0) {
+    hiddenRisks.push('No price disclosed in quote text — flagged for missing pricing');
+  }
 
   const baseQuote: VendorQuote = {
     id: `vq-custom-${Date.now()}`,
@@ -87,9 +94,9 @@ export function analyzeRawQuoteText(
     guestCapacity: effectiveGuests,
     isVerifiedQuote: false,
     inclusions: ['Parsed from pasted text — verify with vendor'],
-    hiddenRisks: hasHiddenCharge ? ['Potential extra charges detected in quote text'] : [],
+    hiddenRisks,
     clarificationQuestions: [
-      'Confirm final all-inclusive price with GST',
+      quotedPrice === 0 ? 'Request formal baseline price card or quote' : 'Confirm final all-inclusive price with GST',
       'Verify guest capacity and per-head overage rates',
       'Request itemized breakdown of inclusions',
     ],

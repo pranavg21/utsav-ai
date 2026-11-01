@@ -8,16 +8,14 @@ import { Zap, MessageSquare } from 'lucide-react';
 import type { EventContext, ChangeRequestInput } from '../types/planner';
 import { sanitizeUserText } from '../utils/security';
 import { CARD_CLASSES, BADGE_BASE, formatINR } from '../utils/uiHelpers';
+import { useGeminiAuth } from '../hooks/useGeminiAuth';
+import { ProvenanceBadge } from './ProvenanceBadge';
+import { formatChangeSummary } from '../domain/changeRequest/parse';
+import { aggregateChangePrompt } from '../domain/changeRequest/aggregate';
 
-interface ShockPreset {
-  readonly label: string;
-  readonly input: ChangeRequestInput;
-}
-
-interface RippleProps {
-  readonly context: EventContext;
-  readonly onApplyChange: (input: ChangeRequestInput) => void;
-}
+interface ShockPreset { readonly label: string; readonly input: ChangeRequestInput; }
+interface RippleProps { readonly context: EventContext; readonly onApplyChange: (input: ChangeRequestInput) => void; }
+interface LastAppliedState { readonly label: string; readonly summary?: string | undefined; }
 
 const SHOCK_BTN_CLASS =
   'flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 ' +
@@ -29,7 +27,8 @@ const PROMPT_INPUT_CLASS =
 
 export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }) => {
   const [customPrompt, setCustomPrompt] = useState('');
-  const [lastApplied, setLastApplied] = useState<string | null>(null);
+  const [lastApplied, setLastApplied] = useState<LastAppliedState | null>(null);
+  const { isConnected } = useGeminiAuth();
 
   const shocks: ShockPreset[] = [
     {
@@ -37,7 +36,7 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
       input: { rawPrompt: '+20% expense overrun', costOverrunPercent: 20 },
     },
     {
-      label: `+50 Guests, -10% Budget, 2 Weeks Earlier`,
+      label: '+50 Guests, -10% Budget, 2 Weeks Earlier',
       input: {
         rawPrompt: '+50 guests, -10% budget, 2 weeks earlier',
         guestDelta: 50,
@@ -46,7 +45,7 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
       },
     },
     {
-      label: `Venue Booking Delayed by 10 Days`,
+      label: 'Venue Booking Delayed by 10 Days',
       input: {
         rawPrompt: 'Venue booking delayed by 10 days',
         vendorDelay: { taskId: 'task-venue', days: 10 },
@@ -56,7 +55,7 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
 
   const handleShockClick = useCallback(
     (shock: ShockPreset): void => {
-      setLastApplied(shock.label);
+      setLastApplied({ label: shock.label, summary: undefined });
       onApplyChange(shock.input);
     },
     [onApplyChange]
@@ -65,10 +64,12 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
   const handleCustomSubmit = useCallback((): void => {
     if (!customPrompt.trim()) return;
     const sanitized = sanitizeUserText(customPrompt);
-    setLastApplied(sanitized);
+    const parsed = aggregateChangePrompt(sanitized, context.totalBudget);
+    const summary = formatChangeSummary(parsed);
+    setLastApplied({ label: sanitized, summary: summary || undefined });
     onApplyChange({ rawPrompt: sanitized });
     setCustomPrompt('');
-  }, [customPrompt, onApplyChange]);
+  }, [context.totalBudget, customPrompt, onApplyChange]);
 
   return (
     <section className={CARD_CLASSES} aria-label="Ripple effect simulator">
@@ -113,19 +114,26 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
       </div>
       {lastApplied && (
         <div
-          className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3"
+          className="mt-3 rounded-lg border border-slate-700 bg-slate-900/90 p-3"
           role="status"
           aria-live="polite"
         >
-          <div className="mb-1 flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between gap-2">
             <span className={`${BADGE_BASE} bg-amber-500/20 text-amber-400`}>
               Last Change Applied
             </span>
-            <span className="text-xs font-medium text-amber-300" role="status">
-              Net Impact: Plan Recalculated
-            </span>
+            <ProvenanceBadge
+              provenance={
+                isConnected
+                  ? { source: 'gemini', model: 'gemini-3.8-flash' }
+                  : { source: 'deterministic', reason: 'no-api-key' }
+              }
+            />
           </div>
-          <p className="text-sm text-amber-200">{lastApplied}</p>
+          <p className="text-sm font-medium text-slate-200">{lastApplied.label}</p>
+          {lastApplied.summary && (
+            <p className="mt-1 text-xs font-semibold text-emerald-400">{lastApplied.summary}</p>
+          )}
         </div>
       )}
     </section>
