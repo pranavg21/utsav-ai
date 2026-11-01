@@ -1,5 +1,5 @@
 /**
- * @fileoverview Bulletproof deterministic fallbacks for celebration themes and change requests.
+ * @fileoverview Resilient deterministic fallbacks for celebration themes and change requests.
  */
 
 import type { ChangeRequestInput } from '../../types/plannerExtended';

@@ -28,7 +28,7 @@ flowchart TD
   end
 
   subgraph Edge Services ["Edge Services & External I/O"]
-    Gemini["Gemini 2.5 Flash Client\n(src/services/gemini/client.ts)"]
+    Gemini["Gemini 3.8 Flash Client\n(src/services/gemini/client.ts)"]
     Fallbacks["Deterministic Fallback Planner\n(src/services/gemini/fallbacks.ts)"]
     Cache["FNV-1a 24h LRU Cache\n(src/utils/cache.ts)"]
     Schemas["Zod Validation Boundary\n(src/utils/schemas.ts)"]
@@ -79,5 +79,5 @@ flowchart TD
 
 ### ADR-004: Hybrid Generative AI with AST Rule-Based Fallbacks
 - **Context:** Reliance on external cloud APIs poses availability, latency, and cost risks. An event planner in the field must function even in offline or network-constrained settings.
-- **Decision:** UtsavAI adopts a **deterministic-first hybrid architecture**. When Gemini 2.5 Flash is active with user BYOK credentials, prompts generate rich, creative natural language reasoning. If the network drops, rate limits trigger, or no API key is supplied, the system seamlessly executes pure deterministic TypeScript rule engines (`src/domain/changeRequest/parse.ts`, `src/services/gemini/fallbacks.ts`).
+- **Decision:** UtsavAI adopts a **Gemini-first architecture with a deterministic resilience layer**. Primary intelligence is powered by Gemini 3.8 Flash with native structured outputs. If the network drops, rate limits trigger, or no API key is supplied, the system seamlessly executes pure deterministic TypeScript rule engines (`src/domain/changeRequest/parse.ts`, `src/services/gemini/fallbacks.ts`).
 - **Consequences:** Zero application crashes. 100% functional testability in CI without API keys or network mocks. Zero vendor lock-in.

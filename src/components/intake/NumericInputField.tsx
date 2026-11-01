@@ -37,8 +37,10 @@ export const NumericInputField: React.FC<NumericInputFieldProps> = React.memo(
         setError(null);
         return;
       }
-      if (parsed < min || parsed > max) {
+      if (parsed < min) {
         setError(`${label} must be at least ${min.toLocaleString('en-IN')}`);
+      } else if (parsed > max) {
+        setError(`${label} must be at most ${max.toLocaleString('en-IN')}`);
       } else {
         setError(null);
         onUpdate(validateNumericBound(parsed, min, max));

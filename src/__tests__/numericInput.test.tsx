@@ -53,4 +53,31 @@ describe('NumericInputField', () => {
     fireEvent.blur(input);
     expect(input.value).toBe('80000');
   });
+
+  it('shows appropriate error message when value is below min or above max (10.7)', () => {
+    const onUpdate = vi.fn();
+    render(
+      <NumericInputField
+        id="test-budget-bounds"
+        label="Budget"
+        value={50000}
+        min={1000}
+        max={100000}
+        ariaLabel="Bounded budget"
+        onUpdate={onUpdate}
+      />
+    );
+
+    const input = screen.getByLabelText('Bounded budget');
+
+    // Below min
+    fireEvent.change(input, { target: { value: '500' } });
+    fireEvent.blur(input);
+    expect(screen.getByRole('alert').textContent).toContain('Budget must be at least 1,000');
+
+    // Above max
+    fireEvent.change(input, { target: { value: '200000' } });
+    fireEvent.blur(input);
+    expect(screen.getByRole('alert').textContent).toContain('Budget must be at most 1,00,000');
+  });
 });
