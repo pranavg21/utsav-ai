@@ -6,10 +6,20 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const distDir = path.resolve(process.cwd(), 'dist', 'assets');
+const htmlFile = path.resolve(process.cwd(), 'dist', 'index.html');
 const MAX_GZIP_BYTES = 130 * 1024; // 130 kB
 
-if (!fs.existsSync(distDir)) {
-  console.error(`Error: Directory ${distDir} does not exist. Run build first.`);
+if (!fs.existsSync(distDir) || !fs.existsSync(htmlFile)) {
+  console.error(`Error: dist directory or index.html does not exist. Run build first.`);
+  process.exit(1);
+}
+
+const htmlContent = fs.readFileSync(htmlFile, 'utf-8');
+const entryMatch = htmlContent.match(/<script[^>]+src=["'](?:\/assets\/|assets\/)?([^"']+\.js)["']/i);
+const entryFilename = entryMatch ? entryMatch[1] : null;
+
+if (!entryFilename) {
+  console.error('Error: Could not identify entry script in dist/index.html');
   process.exit(1);
 }
 
@@ -37,7 +47,10 @@ for (const file of jsFiles) {
 
   const gzipped = zlib.gzipSync(content);
   const sizeKb = (gzipped.length / 1024).toFixed(2);
-  console.log(`Bundle chunk ${file}: raw ${content.length} B, gzip ${sizeKb} kB`);
+  const isEntry = file === entryFilename;
+  const label = isEntry ? '[ENTRY] ' : '';
+
+  console.log(`${label}Bundle chunk ${file}: raw ${content.length} B, gzip ${sizeKb} kB`);
 
   if (gzipped.length > MAX_GZIP_BYTES) {
     console.error(`FAILED: ${file} gzip size (${sizeKb} kB) exceeds 130 kB budget!`);
