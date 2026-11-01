@@ -36,3 +36,4 @@ describe('Shock Simulator Venue Delay (9.4)', () => {
     expect(catererAfter?.daysBeforeEvent).toBe(80);
   });
 });
+

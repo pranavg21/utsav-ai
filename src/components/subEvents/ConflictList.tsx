@@ -73,3 +73,4 @@ export const ConflictList: React.FC<ConflictListProps> = ({ conflicts }) => {
     </div>
   );
 };
+

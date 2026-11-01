@@ -80,3 +80,4 @@ describe('SubEventsTab Accessibility & Interaction', () => {
     expect(screen.getByText(/Reduce sub-event guest count/i)).toBeDefined();
   });
 });
+

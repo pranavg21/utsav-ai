@@ -17,3 +17,4 @@ export const TabSkeleton: React.FC = () => (
 );
 
 export default TabSkeleton;
+

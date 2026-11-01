@@ -87,3 +87,4 @@ describe('Gemini Cache Poisoning & Key Invariants (9.2)', () => {
     expect(client.executeStructuredGeminiCall).toHaveBeenCalledTimes(2);
   });
 });
+

@@ -62,3 +62,4 @@ export const COMMUNITY_TASK_TEMPLATES: readonly TaskTemplate[] = [
     dependsOn: ['task-rehearsal'],
   },
 ];
+
