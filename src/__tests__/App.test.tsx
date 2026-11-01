@@ -17,6 +17,7 @@ describe('App root component', () => {
     expect(screen.getByRole('tab', { name: /Switch to Timeline tab/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Switch to Vendor Quotes tab/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Switch to Theme Ideas tab/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Switch to Sub-Events tab/i })).toBeDefined();
     expect(
       screen.getByRole('button', { name: /Export complete celebration plan as JSON/i })
     ).toBeDefined();
@@ -36,6 +37,12 @@ describe('App root component', () => {
 
     const vendorHeading = await screen.findByText(/Vendor Quote Comparator/i);
     expect(vendorHeading).toBeDefined();
+
+    const subEventsTabBtn = screen.getByRole('tab', { name: /Switch to Sub-Events tab/i });
+    fireEvent.click(subEventsTabBtn);
+
+    const subEventsHeading = await screen.findByText(/Multi-Function Event Coordination/i);
+    expect(subEventsHeading).toBeDefined();
   });
 
   it('should trigger JSON export on export button click', () => {

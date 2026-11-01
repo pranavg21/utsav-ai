@@ -19,8 +19,9 @@ const VendorChecklistTab = lazy(() =>
 );
 const VendorComparatorTab = lazy(() => import('./components/VendorComparatorTab'));
 const PersonalizedIdeasTab = lazy(() => import('./components/PersonalizedIdeasTab'));
+const SubEventsTab = lazy(() => import('./components/subEvents/SubEventsTab'));
 
-type TabId = 'budget' | 'timeline' | 'checklist' | 'vendor' | 'ideas';
+type TabId = 'budget' | 'timeline' | 'checklist' | 'vendor' | 'ideas' | 'subevents';
 
 const TABS: ReadonlyArray<{ readonly id: TabId; readonly label: string }> = [
   { id: 'budget', label: 'Budget Matrix' },
@@ -28,6 +29,7 @@ const TABS: ReadonlyArray<{ readonly id: TabId; readonly label: string }> = [
   { id: 'checklist', label: 'Vendor Checklist' },
   { id: 'vendor', label: 'Vendor Quotes' },
   { id: 'ideas', label: 'Theme Ideas' },
+  { id: 'subevents', label: 'Sub-Events' },
 ];
 
 const TabSkeleton: React.FC = () => (
@@ -49,6 +51,11 @@ const App: React.FC = () => {
   const [isLargeText, setLargeText] = useState(false);
   const [assumptions, setAssumptions] = useState<EventAssumptions>(DEFAULT_ASSUMPTIONS);
 
+  const handleExport = () => {
+    const { context, tasks, quotes, checklist } = state;
+    downloadPlanJson({ context, budget: derived.evaluation, timeline: tasks, vendors: quotes, checklist });
+  };
+
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-100 ${isHighContrast ? 'contrast-125' : ''} ${isLargeText ? 'text-lg' : ''}`}>
       <Header
@@ -62,15 +69,7 @@ const App: React.FC = () => {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={() =>
-              downloadPlanJson({
-                context: state.context,
-                budget: derived.evaluation,
-                timeline: state.tasks,
-                vendors: state.quotes,
-                checklist: state.checklist,
-              })
-            }
+            onClick={handleExport}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-saffron-500 hover:text-saffron-400"
             aria-label="Export complete celebration plan as JSON"
           >
@@ -129,6 +128,15 @@ const App: React.FC = () => {
               />
             )}
             {activeTab === 'ideas' && <PersonalizedIdeasTab context={state.context} />}
+            {activeTab === 'subevents' && (
+              <SubEventsTab
+                subEvents={state.subEvents}
+                totalBudget={state.context.totalBudget}
+                totalGuests={state.context.guestCount}
+                items={derived.evaluation.items}
+                onUpdateSubEvent={actions.updateSubEvent}
+              />
+            )}
           </div>
         </Suspense>
       </main>

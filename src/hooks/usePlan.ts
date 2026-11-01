@@ -51,6 +51,14 @@ export interface UsePlanReturn {
       options?: { readonly advancePaid?: number | undefined; readonly bookedPrice?: number | undefined }
     ) => void;
     readonly setChecklist: (checklist: readonly VendorChecklistItem[]) => void;
+    readonly updateSubEvent: (
+      subEventId: string,
+      updates: {
+        readonly name?: string | undefined;
+        readonly guestCount?: number | undefined;
+        readonly budgetSharePercent?: number | undefined;
+      }
+    ) => void;
   };
 }
 
@@ -92,6 +100,18 @@ export function usePlan(
 
   const setChecklist = useCallback((checklist: readonly VendorChecklistItem[]) => dispatch({ type: 'SET_CHECKLIST', payload: checklist }), []);
 
+  const updateSubEvent = useCallback(
+    (
+      subEventId: string,
+      updates: {
+        readonly name?: string | undefined;
+        readonly guestCount?: number | undefined;
+        readonly budgetSharePercent?: number | undefined;
+      }
+    ) => dispatch({ type: 'UPDATE_SUB_EVENT', payload: { subEventId, updates } }),
+    []
+  );
+
   return {
     state,
     derived: { evaluation, categoryBudgets, bottlenecks, subEventRollup, checklistSummary, overdueVendors },
@@ -107,6 +127,7 @@ export function usePlan(
       toggleQuoteVerified,
       updateChecklistStatus,
       setChecklist,
+      updateSubEvent,
     },
   };
 }
