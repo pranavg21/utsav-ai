@@ -9,6 +9,7 @@ export interface AggregatedChange {
   readonly guestDelta: number;
   readonly budgetDeltaPercent: number;
   readonly timelineDeltaDays: number;
+  readonly budgetCurrency?: number | undefined;
   readonly costOverrunPercent?: number | undefined;
   readonly vendorDelay?: { readonly taskId: string; readonly days: number } | undefined;
 }
@@ -60,6 +61,7 @@ export function aggregateChangePrompt(rawPrompt: string, totalBudget = 1000000):
     guestDelta: agg.guestDelta,
     budgetDeltaPercent: budgetPct,
     timelineDeltaDays: agg.timelineDeltaDays,
+    ...(agg.budgetCurrency !== 0 ? { budgetCurrency: agg.budgetCurrency } : {}),
     ...(agg.costOverrunPercent ? { costOverrunPercent: agg.costOverrunPercent } : {}),
     ...(agg.vendorDelay ? { vendorDelay: agg.vendorDelay } : {}),
   };

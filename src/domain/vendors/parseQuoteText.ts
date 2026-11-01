@@ -4,20 +4,8 @@
 
 import type { BudgetCategoryName, VendorQuote } from '../../types/planner';
 import type { ProvenanceBadgeData } from '../../types/plannerExtended';
+import { parseIndianAmountMultiplier } from '../shared/indianNumbers';
 import { calculateAllInCost } from './normalize';
-
-function resolveUnitMultiplier(unit: string): number {
-  if (unit === 'l' || unit === 'lakh' || unit === 'lac') {
-    return 100000;
-  }
-  if (unit === 'k') {
-    return 1000;
-  }
-  if (unit === 'cr' || unit === 'crore') {
-    return 10000000;
-  }
-  return 1;
-}
 
 function extractMultiplierPrice(rawText: string): number | null {
   const multMatch = rawText.match(
@@ -28,7 +16,7 @@ function extractMultiplierPrice(rawText: string): number | null {
   }
   const val = parseFloat(multMatch[1]);
   const unit = multMatch[2]?.toLowerCase() ?? '';
-  return Math.round(val * resolveUnitMultiplier(unit));
+  return Math.round(val * parseIndianAmountMultiplier(unit));
 }
 
 function extractCurrencySymbolPrice(rawText: string): number | null {

@@ -4,6 +4,7 @@
 
 import { type Result, okResult, errResult } from '../../types/result';
 import { VENDOR_DELAY_TASK_IDS } from '../timeline/templates';
+import { parseIndianAmountMultiplier } from '../shared/indianNumbers';
 
 export interface ChangeRequestIntent {
   readonly target: 'budget' | 'timeline' | 'headcount' | 'scope' | 'vendorDelay' | 'costOverrun';
@@ -25,21 +26,13 @@ export interface ParsedChangeSummaryInput {
   readonly costOverrunPercent?: number | undefined;
 }
 
-function parseMultiplier(token: string): number {
-  const lower = token.toLowerCase();
-  if (lower.includes('lakh') || lower.includes('lac')) return 100000;
-  if (lower.includes('k')) return 1000;
-  if (lower.includes('cr') || lower.includes('crore')) return 10000000;
-  return 1;
-}
-
 function extractNumber(text: string): number | null {
   const match = text.match(/(\d+(?:\.\d+)?)\s*(lakh|lac|cr|crore|k)?/i);
   if (!match) return null;
   const numPart = match[1];
   if (!numPart) return null;
   const base = parseFloat(numPart);
-  const mult = match[2] ? parseMultiplier(match[2]) : 1;
+  const mult = match[2] ? parseIndianAmountMultiplier(match[2]) : 1;
   return Math.round(base * mult);
 }
 
@@ -127,7 +120,7 @@ export function parseChangeRequest(rawText: string): Result<ChangeRequestIntent,
   return errResult(`Unable to extract actionable intent from: "${rawText.trim()}"`);
 }
 
-function formatItem(val: number | undefined, suffix: string): string | null {
+export function formatItem(val: number | undefined, suffix: string): string | null {
   if (!val) return null;
   const sign = val > 0 ? '+' : '';
   return `${sign}${val}${suffix}`;

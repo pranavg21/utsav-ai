@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import type { EventContext, ChangeRequestInput } from '../types/planner';
 import { parseChangeRequestWithAi } from '../services/gemini/planner';
 import { aggregateChangePrompt } from '../domain/changeRequest/aggregate';
+import { formatItem } from '../domain/changeRequest/parse';
 import type { ProvenanceBadgeData } from '../services/gemini/types';
 
 export interface UseChangeRequestAiReturn {
@@ -18,12 +19,6 @@ export interface UseChangeRequestAiReturn {
     rawPrompt: string,
     onApply: (input: ChangeRequestInput) => void
   ) => Promise<void>;
-}
-
-function formatItem(val: number | undefined, suffix: string): string | null {
-  if (!val) return null;
-  const sign = val > 0 ? '+' : '';
-  return `${sign}${val}${suffix}`;
 }
 
 function buildSummaryText(g: number, b: number, t: number, c?: number): string | null {
