@@ -4,6 +4,8 @@
 
 import type { BudgetCategoryName, EventContext, VendorQuote } from '../../types/planner';
 
+export { analyzeRawQuoteText } from './parseQuoteText';
+
 export interface QuoteComparisonResult {
   readonly quoteId: string;
   readonly vendorName: string;
@@ -23,16 +25,31 @@ export interface AllInCostBreakdown {
   readonly allInCost: number;
 }
 
+function resolveGstRate(category: BudgetCategoryName, optRate?: number): number {
+  if (optRate !== undefined) {
+    return optRate;
+  }
+  return category === 'Catering & Hospitality' ? 0.05 : 0.18;
+}
+
+function isPerPlateQuote(quote: VendorQuote): boolean {
+  if (quote.perUnitPrice !== undefined && quote.perUnitPrice > 0) {
+    return true;
+  }
+  return quote.quotedPrice > 0 && quote.quotedPrice < 5000;
+}
+
 export function calculateAllInCost(
   quote: VendorQuote,
   guestCount: number,
   options?: { readonly headcountBuffer?: number; readonly gstRate?: number }
 ): AllInCostBreakdown {
   const buffer = options?.headcountBuffer ?? 0.15;
-  const gstRate = options?.gstRate ?? (quote.category === 'Catering & Hospitality' ? 0.05 : 0.18);
-  const isPerPlate = quote.quotedPrice > 0 && quote.quotedPrice < 5000;
+  const gstRate = resolveGstRate(quote.category, options?.gstRate);
+  const isPerPlate = isPerPlateQuote(quote);
   const effectiveGuests = isPerPlate ? Math.round(guestCount * (1 + buffer)) : 1;
-  const baseAmount = isPerPlate ? quote.quotedPrice * effectiveGuests : quote.quotedPrice;
+  const rate = quote.perUnitPrice ?? quote.quotedPrice;
+  const baseAmount = isPerPlate ? rate * effectiveGuests : quote.quotedPrice;
   const gstAmount = Math.round(baseAmount * gstRate);
 
   return {
@@ -63,31 +80,5 @@ export function compareQuoteToContext(
     budgetDelta,
     riskCount: quote.hiddenRisks.length,
     questionCount: quote.clarificationQuestions.length,
-  };
-}
-
-export function analyzeRawQuoteText(rawText: string, category: BudgetCategoryName): VendorQuote {
-  const priceMatch = rawText.match(/₹\s?([\d,]+)/);
-  const priceStr = priceMatch?.[1] ?? '0';
-  const extractedPrice = parseInt(priceStr.replace(/,/g, ''), 10);
-  const guestMatch = rawText.match(/(\d+)\s*(?:guests?|pax|people|persons?)/i);
-  const guestStr = guestMatch?.[1] ?? '0';
-  const extractedCapacity = parseInt(guestStr, 10);
-  const hasHiddenCharge = /extra|additional|surcharge|not included|excluded/i.test(rawText);
-
-  return {
-    id: `vq-custom-${Date.now()}`,
-    vendorName: 'Custom Vendor (Parsed)',
-    category,
-    quotedPrice: extractedPrice,
-    guestCapacity: extractedCapacity,
-    isVerifiedQuote: false,
-    inclusions: ['Parsed from pasted text — verify with vendor'],
-    hiddenRisks: hasHiddenCharge ? ['Potential extra charges detected in quote text'] : [],
-    clarificationQuestions: [
-      'Confirm final all-inclusive price with GST',
-      'Verify guest capacity and per-head overage rates',
-      'Request itemized breakdown of inclusions',
-    ],
   };
 }

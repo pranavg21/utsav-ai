@@ -33,10 +33,10 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
 
     const handleParse = useCallback((): void => {
       if (!rawText.trim()) return;
-      const parsed = analyzeRawQuoteText(sanitizeUserText(rawText, 5000), parseCategory);
+      const parsed = analyzeRawQuoteText(sanitizeUserText(rawText, 5000), parseCategory, context.guestCount);
       onAddQuote(parsed);
       setRawText('');
-    }, [rawText, parseCategory, onAddQuote]);
+    }, [rawText, parseCategory, context.guestCount, onAddQuote]);
 
     return (
       <section aria-label="Vendor quote comparator">

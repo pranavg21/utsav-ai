@@ -61,6 +61,10 @@ export interface VendorQuote {
   readonly hiddenRisks: string[];
   /** Recommended questions the user should ask before signing or paying a deposit. */
   readonly clarificationQuestions: string[];
+  /** Optional per-plate or per-unit base rate before guest multiplier. */
+  readonly perUnitPrice?: number | undefined;
+  /** Normalized all-in cost including GST and buffers. */
+  readonly allInCost?: number | undefined;
 }
 
 /**
