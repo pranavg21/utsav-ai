@@ -9,6 +9,7 @@ import { buildDeterministicThemes } from './themeFallback';
 
 export { buildDeterministicThemes };
 
+/** Structured result of a deterministic celebration change request calculation. */
 export interface ParsedChangeResult {
   readonly guestDelta: number;
   readonly budgetDeltaPercent: number;
@@ -36,6 +37,12 @@ function resolveOptionalDeltas(
   };
 }
 
+/**
+ * Computes deterministic change deltas when offline or when Gemini response is unavailable.
+ * @param input Change request payload containing rawPrompt or explicit overrides.
+ * @param totalBudget Baseline event budget for currency-to-percentage conversions.
+ * @returns Deterministic change result with calculated deltas and summary note.
+ */
 export function buildDeterministicChangeResult(
   input: ChangeRequestInput,
   totalBudget = 1000000

@@ -17,6 +17,9 @@ const DEFAULT_CATEGORY_WEIGHT = 0.1;
 
 /**
  * Builds initial category budget items with priority weighting and occasion-tailored shares.
+ * @param context Celebration event context with priorities, guest count, and total budget.
+ * @param simulatedOverrunRatio Optional cost multiplier to simulate overrun conditions.
+ * @returns Array of prioritized category budget allocations.
  */
 export function buildInitialBudgetItems(
   context: EventContext,
@@ -70,6 +73,9 @@ export function buildInitialBudgetItems(
 
 /**
  * Merges updated context into existing budget items, preserving user-edited amounts and verified locks.
+ * @param context Updated event context.
+ * @param existingItems Current state budget category items.
+ * @returns Merged budget items preserving verified quotes and custom amounts.
  */
 export function mergeBudgetAllocations(
   context: EventContext,
@@ -100,6 +106,12 @@ const MUST_HAVE_PATTERNS: Partial<Record<BudgetCategoryName, RegExp>> = {
   'Entertainment & Rituals': /dj|music|band|ritual|singer/i,
 };
 
+/**
+ * Checks whether a budget category is shielded from cuts by non-negotiable must-haves.
+ * @param category Category to evaluate for must-have protection.
+ * @param mustHaves User-specified array of non-negotiable celebration requirements.
+ * @returns True if any must-have keyword matches the category's protected scope.
+ */
 export function isProtectedByMustHaves(
   category: BudgetCategoryName,
   mustHaves: readonly string[]

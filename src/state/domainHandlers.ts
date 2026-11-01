@@ -6,6 +6,12 @@ import type { PlanState } from './planReducer';
 import type { DomainAction } from './planActions';
 import { updateChecklistItem } from '../domain/vendors/checklist';
 
+/**
+ * Handles budget category domain actions (projected edits, verified lock toggle, trade-offs).
+ * @param state Current celebration plan state.
+ * @param action Dispatched domain action.
+ * @returns Updated plan state with recalculated budget item amounts.
+ */
 export function handleDomainBudget(state: PlanState, action: DomainAction): PlanState {
   switch (action.type) {
     case 'SET_PROJECTED':
@@ -37,6 +43,12 @@ export function handleDomainBudget(state: PlanState, action: DomainAction): Plan
   }
 }
 
+/**
+ * Handles vendor quote management actions (adding parsed quotes, toggling verification).
+ * @param state Current celebration plan state.
+ * @param action Dispatched domain action.
+ * @returns Updated plan state with modified quotes list.
+ */
 export function handleDomainQuote(state: PlanState, action: DomainAction): PlanState {
   switch (action.type) {
     case 'ADD_QUOTE':
@@ -53,6 +65,12 @@ export function handleDomainQuote(state: PlanState, action: DomainAction): PlanS
   }
 }
 
+/**
+ * Handles ceremony sub-event updates (guest headcount, budget share).
+ * @param state Current celebration plan state.
+ * @param action Dispatched domain action.
+ * @returns Updated plan state with revised sub-events.
+ */
 export function handleDomainSubEvent(state: PlanState, action: DomainAction): PlanState {
   if (action.type !== 'UPDATE_SUB_EVENT') return state;
   const { subEventId, updates } = action.payload;
@@ -71,6 +89,12 @@ export function handleDomainSubEvent(state: PlanState, action: DomainAction): Pl
   };
 }
 
+/**
+ * Handles vendor checklist status transitions and auto-locks budget items upon booking.
+ * @param state Current celebration plan state.
+ * @param action Dispatched domain action.
+ * @returns Updated plan state with updated checklist and locked budget items.
+ */
 export function handleDomainChecklist(state: PlanState, action: DomainAction): PlanState {
   if (action.type === 'SET_CHECKLIST') {
     return { ...state, checklist: action.payload };
@@ -103,4 +127,3 @@ export function handleDomainChecklist(state: PlanState, action: DomainAction): P
 
   return { ...state, checklist: updatedChecklist, budgetItems };
 }
-

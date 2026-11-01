@@ -5,6 +5,7 @@
 import React from 'react';
 import type { SubEventConflict } from '../../domain/subEvents/conflicts';
 
+/** Props for the ConflictList component. */
 export interface ConflictListProps {
   readonly conflicts: readonly SubEventConflict[];
 }
@@ -22,6 +23,7 @@ function getSuggestedFix(conflict: SubEventConflict): string {
   }
 }
 
+/** Renders actionable conflict and transit warning cards across celebration sub-events. */
 export const ConflictList: React.FC<ConflictListProps> = ({ conflicts }) => {
   if (conflicts.length === 0) {
     return (

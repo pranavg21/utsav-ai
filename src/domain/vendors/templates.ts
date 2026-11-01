@@ -5,6 +5,7 @@
 
 import type { VendorChecklistItem } from './types';
 
+/** Default vendor checklist blueprints for Indian wedding celebrations. */
 export const WEDDING_VENDOR_TEMPLATES: readonly VendorChecklistItem[] = [
   {
     id: 'chk-wed-venue',

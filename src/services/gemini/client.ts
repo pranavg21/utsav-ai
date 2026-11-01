@@ -18,11 +18,19 @@ const GEMINI_RATE_KEY = 'gemini-api';
 let isGeminiConnected = false;
 let runtimeApiKey = '';
 
+/**
+ * Sets user-provided Gemini API key at runtime.
+ * @param key Gemini API key string.
+ */
 export function setRuntimeApiKey(key: string): void {
   runtimeApiKey = key.trim();
   isGeminiConnected = false;
 }
 
+/**
+ * Retrieves the currently active Gemini API key from runtime override or environment.
+ * @returns Active API key string or empty string.
+ */
 export function getActiveApiKey(): string {
   if (runtimeApiKey) return runtimeApiKey;
   try {
@@ -34,10 +42,15 @@ export function getActiveApiKey(): string {
   }
 }
 
+/**
+ * Checks whether a verified connection to Gemini API has succeeded.
+ * @returns True if connected with valid key.
+ */
 export function getGeminiStatus(): boolean {
   return isGeminiConnected && getActiveApiKey().length > 0;
 }
 
+/** Discriminated result of structured Gemini invocation. */
 export type StructuredCallResult<T> =
   | { readonly success: true; readonly data: T; readonly model: string }
   | { readonly success: false; readonly reason: DeterministicReason };
@@ -52,6 +65,13 @@ function classifyGeminiError(isAborted: boolean, errMsg: string): DeterministicR
   return 'invalid-output';
 }
 
+/**
+ * Executes structured JSON call to Gemini 2.5 Flash validated against a Zod schema.
+ * @param prompt Prompt string instructions.
+ * @param schema Zod validation schema.
+ * @param temperature Model sampling temperature.
+ * @returns StructuredCallResult with validated data or classified failure reason.
+ */
 export async function executeStructuredGeminiCall<T>(
   prompt: string,
   schema: z.ZodType<T>,
@@ -103,6 +123,11 @@ export async function executeStructuredGeminiCall<T>(
   }
 }
 
+/**
+ * Executes a plain Gemini prompt and returns stringified JSON or null on failure.
+ * @param prompt Generation prompt string.
+ * @returns Response JSON string or null.
+ */
 export async function executeGeminiPrompt(prompt: string): Promise<string | null> {
   const apiKey = getActiveApiKey();
   if (!apiKey) return null;

@@ -121,6 +121,7 @@ export interface BudgetEvaluationResult {
   readonly tradeOffScenarios: ReadonlyArray<TradeOffScenario>;
 }
 
+/** Preset benchmark configuration for bootstrapping celebration planning state. */
 export interface CelebrationPreset {
   readonly id: string;
   readonly title: string;

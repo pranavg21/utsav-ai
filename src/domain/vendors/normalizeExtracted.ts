@@ -7,6 +7,7 @@ import type { ProvenanceBadgeData } from '../../types/plannerExtended';
 import { isBudgetCategoryName } from '../../utils/typeGuards';
 import { calculateAllInCost } from './normalize';
 
+/** Raw quote extraction payload received from GenAI vendor extraction model. */
 export interface RawExtractedQuoteData {
   readonly vendorName: string;
   readonly category: string;
@@ -17,6 +18,7 @@ export interface RawExtractedQuoteData {
   readonly negotiationPoints: readonly string[];
 }
 
+/** Options for normalizing raw extracted quotes against celebration context. */
 export interface NormalizeQuoteOptions {
   readonly rawText: string;
   readonly category: BudgetCategoryName;
@@ -57,34 +59,51 @@ function resolveExtractedRisks(
   return risks;
 }
 
+/**
+ * Normalizes an AI-extracted quote data object into a typed VendorQuote with all-in costs.
+ * @param extracted Structured data extracted from quote text by Gemini.
+ * @param options Contextual fallback options including provenance and default guests.
+ * @returns Fully normalized VendorQuote entity.
+ */
 export function normalizeExtractedQuote(
   extracted: RawExtractedQuoteData,
   options: NormalizeQuoteOptions
 ): VendorQuote {
-  const { rawText, category, defaultGuests, provenance } = options;
+  const { rawText, category: fallbackCategory, defaultGuests, provenance } = options;
   const isPerUnit = /per\s+(?:plate|head|pax|person)|\/(?:plate|head|pax|person)\b/i.test(rawText);
   const guestCapacity = extracted.guestCapacity > 0 ? extracted.guestCapacity : defaultGuests;
   const pricing = resolveExtractedPricing(extracted.quotedPrice, isPerUnit, guestCapacity);
-  const hiddenRisks = resolveExtractedRisks(extracted.hiddenRisks, rawText, pricing.price);
-
-  const clarificationQuestions = extracted.negotiationPoints.length > 0
-    ? [...extracted.negotiationPoints]
-    : [pricing.price === 0 ? 'Request formal baseline price card or quote' : 'Confirm final all-inclusive price with GST'];
+  const quotedPrice = pricing.price;
+  const perUnitPrice = pricing.perUnit;
+  const hiddenRisks = resolveExtractedRisks(extracted.hiddenRisks, rawText, quotedPrice);
+  const finalCategory = isBudgetCategoryName(extracted.category) ? extracted.category : fallbackCategory;
 
   const baseQuote: VendorQuote = {
     id: `vq-ai-${Date.now()}`,
-    vendorName: extracted.vendorName || 'Custom Vendor (AI Parsed)',
-    category: isBudgetCategoryName(extracted.category) ? extracted.category : category,
-    quotedPrice: pricing.price,
+    vendorName: extracted.vendorName.trim() || 'Custom Vendor (AI Parsed)',
+    category: finalCategory,
+    quotedPrice,
     guestCapacity,
     isVerifiedQuote: false,
-    inclusions: extracted.inclusions.length > 0 ? [...extracted.inclusions] : ['Extracted quote package'],
+    inclusions: extracted.inclusions.length > 0 ? [...extracted.inclusions] : ['Parsed with Gemini — review terms'],
     hiddenRisks,
-    clarificationQuestions,
-    ...(pricing.perUnit !== undefined && { perUnitPrice: pricing.perUnit }),
-    provenance,
+    clarificationQuestions:
+      extracted.negotiationPoints.length > 0
+        ? [...extracted.negotiationPoints]
+        : [
+            quotedPrice === 0
+              ? 'Request formal baseline price card or quote'
+              : 'Confirm final all-inclusive price with GST',
+            'Verify guest capacity and per-head overage rates',
+            'Request itemized breakdown of inclusions',
+          ],
+    ...(perUnitPrice !== undefined && { perUnitPrice }),
   };
 
   const allIn = calculateAllInCost(baseQuote, guestCapacity);
-  return { ...baseQuote, allInCost: allIn.allInCost };
+  return {
+    ...baseQuote,
+    allInCost: allIn.allInCost,
+    provenance,
+  };
 }

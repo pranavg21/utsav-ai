@@ -24,6 +24,11 @@ function formatMustHaves(mustHaves: readonly string[], index: number): string {
   return item ? ` featuring ${item}` : '';
 }
 
+/**
+ * Generates dynamic deterministic celebration themes adapting to demographic and accessibility constraints.
+ * @param ctx Event context containing occasion, demographics, accessibility needs, and budget.
+ * @returns Array of tailored celebration theme concepts.
+ */
 export function buildDeterministicThemes(ctx: EventContext): PersonalizedConcept[] {
   const perGuest = Math.round(ctx.totalBudget / Math.max(1, ctx.guestCount));
   const childAdapt = buildChildrenAdaptation(ctx.ageGroups ?? []);

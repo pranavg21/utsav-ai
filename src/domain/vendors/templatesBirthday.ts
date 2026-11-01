@@ -4,6 +4,7 @@
 
 import type { VendorChecklistItem } from './types';
 
+/** Default vendor checklist blueprints for milestone and kids' birthday celebrations. */
 export const BIRTHDAY_VENDOR_TEMPLATES: readonly VendorChecklistItem[] = [
   {
     id: 'chk-bday-venue',

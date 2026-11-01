@@ -16,6 +16,7 @@ interface VendorQuoteCardProps {
   readonly onToggleVerified: (quoteId: string) => void;
 }
 
+/** Card displaying vendor quote details, hidden risks, all-in cost with GST, and price verification lock. */
 export const VendorQuoteCard: React.FC<VendorQuoteCardProps> = React.memo(
   ({ quote, context, budget, onToggleVerified }) => {
     const comparison = compareQuoteToContext(quote, context, budget);

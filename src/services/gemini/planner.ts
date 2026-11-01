@@ -15,7 +15,6 @@ import { GEMINI_MODEL_ID, GEMINI_TEMPERATURES } from './config';
 import {
   AiChangeRequestResponseSchema,
   AiPersonalizedIdeasResponseSchema,
-  type AiChangeRequestResponse,
 } from './schemas';
 import type { AiResult } from './types';
 import {
@@ -23,50 +22,17 @@ import {
   buildDeterministicChangeResult,
   buildDeterministicThemes,
 } from './fallbacks';
+import { resolveAiChangeData } from './plannerHelpers';
 
 export { getActiveApiKey, getGeminiStatus, setRuntimeApiKey };
 export type { ParsedChangeResult };
 
-function computeBudgetPct(rawAmt: number | undefined | null, totalBudget: number, fallbackPct: number): number {
-  if (rawAmt === undefined || rawAmt === null) return fallbackPct;
-  return Math.round((rawAmt / totalBudget) * 100);
-}
-
-function buildOptionalFields(
-  costOverrun?: number,
-  currency?: number,
-  vendorDelay?: { readonly taskId: string; readonly days: number },
-  unrecognized?: readonly string[]
-) {
-  return {
-    ...(costOverrun !== undefined ? { costOverrunPercent: costOverrun } : {}),
-    ...(currency !== undefined ? { budgetDeltaCurrency: currency } : {}),
-    ...(vendorDelay !== undefined ? { vendorDelay } : {}),
-    ...(unrecognized ? { unrecognizedFragments: unrecognized } : {}),
-  };
-}
-
-function resolveAiChangeData(
-  resultData: AiChangeRequestResponse,
-  fallback: ParsedChangeResult,
-  totalBudget: number
-): ParsedChangeResult {
-  const computedPct = computeBudgetPct(resultData.amountDelta, totalBudget, fallback.budgetDeltaPercent);
-  const budgetDeltaPercent = resultData.budgetDeltaPercent ?? computedPct;
-  const costOverrunPercent = resultData.costOverrunPercent ?? fallback.costOverrunPercent;
-  const vendorDelay = resultData.vendorDelay ?? fallback.vendorDelay;
-  const extra = buildOptionalFields(costOverrunPercent, fallback.budgetDeltaCurrency, vendorDelay, fallback.unrecognizedFragments);
-
-  return {
-    guestDelta: resultData.guestDelta ?? fallback.guestDelta,
-    budgetDeltaPercent,
-    timelineDeltaDays: resultData.targetDaysDelta ?? fallback.timelineDeltaDays,
-    impactSummary: resultData.reasoning || fallback.impactSummary,
-    recommendedActions: fallback.recommendedActions,
-    ...extra,
-  };
-}
-
+/**
+ * Parses natural-language celebration changes with Gemini 2.5 Flash, returning structured deltas and provenance.
+ * @param context Celebration event context with baseline budget and guest headcount.
+ * @param input Change request payload containing raw text prompt.
+ * @returns AI result containing parsed change deltas and provenance metadata.
+ */
 export async function parseChangeRequestWithAi(
   context: EventContext,
   input: ChangeRequestInput
@@ -95,6 +61,12 @@ export async function parseChangeRequestWithAi(
   return output;
 }
 
+/**
+ * Parses natural language change request and extracts the computed result data directly.
+ * @param context Celebration event context.
+ * @param input Change request input.
+ * @returns Resolved ParsedChangeResult entity.
+ */
 export async function parseChangeRequest(
   context: EventContext,
   input: ChangeRequestInput
@@ -103,6 +75,11 @@ export async function parseChangeRequest(
   return result.data;
 }
 
+/**
+ * Generates personalized celebration concepts adapting to demographics and accessibility using Gemini.
+ * @param context Event context with occasion, demographics, accessibility needs, and budget tier.
+ * @returns AI result containing personalized celebration concepts and provenance metadata.
+ */
 export async function generateThemesWithAi(
   context: EventContext
 ): Promise<AiResult<PersonalizedConcept[]>> {
@@ -141,6 +118,11 @@ export async function generateThemesWithAi(
   return output;
 }
 
+/**
+ * Generates personalized celebration themes and returns the concepts directly.
+ * @param context Celebration event context.
+ * @returns Array of personalized celebration concepts.
+ */
 export async function generateThemes(context: EventContext): Promise<PersonalizedConcept[]> {
   const result = await generateThemesWithAi(context);
   return result.data;

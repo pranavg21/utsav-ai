@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 
+/** Schema validating Gemini generated full celebration plan response. */
 export const AiPlanResponseSchema = z.object({
   budgetAllocations: z.array(
     z.object({
@@ -31,6 +32,7 @@ export const AiPlanResponseSchema = z.object({
   ),
 });
 
+/** Schema validating Gemini natural-language change request parsing response. */
 export const AiChangeRequestResponseSchema = z.object({
   changeType: z.enum(['guest_count', 'budget_shift', 'timeline_delay', 'vendor_switch', 'scope_tradeoff']),
   targetCategory: z.string().optional().nullable(),
@@ -50,6 +52,7 @@ export const AiChangeRequestResponseSchema = z.object({
   reasoning: z.string(),
 });
 
+/** Schema validating Gemini vendor checklist generation response. */
 export const AiVendorChecklistResponseSchema = z.object({
   items: z.array(
     z.object({
@@ -62,6 +65,7 @@ export const AiVendorChecklistResponseSchema = z.object({
   ),
 });
 
+/** Schema validating Gemini vendor quote information extraction response. */
 export const AiVendorQuoteExtractionSchema = z.object({
   vendorName: z.string(),
   category: z.string(),
@@ -72,6 +76,7 @@ export const AiVendorQuoteExtractionSchema = z.object({
   negotiationPoints: z.array(z.string()),
 });
 
+/** Schema validating an individual Gemini generated celebration concept. */
 export const AiPersonalizedConceptSchema = z.object({
   title: z.string(),
   description: z.string(),
@@ -85,9 +90,17 @@ export const AiPersonalizedConceptSchema = z.object({
   budgetFriendlyAlternative: z.string(),
 });
 
+/** Schema validating array of personalized concept responses from Gemini. */
 export const AiPersonalizedIdeasResponseSchema = z.array(AiPersonalizedConceptSchema);
 
+/** Inferred type for AI celebration plan generation response. */
 export type AiPlanResponse = z.infer<typeof AiPlanResponseSchema>;
+
+/** Inferred type for AI change request parsing response. */
 export type AiChangeRequestResponse = z.infer<typeof AiChangeRequestResponseSchema>;
+
+/** Inferred type for AI vendor checklist response. */
 export type AiVendorChecklistResponse = z.infer<typeof AiVendorChecklistResponseSchema>;
+
+/** Inferred type for AI vendor quote extraction response. */
 export type AiVendorQuoteExtraction = z.infer<typeof AiVendorQuoteExtractionSchema>;

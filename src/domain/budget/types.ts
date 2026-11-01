@@ -4,6 +4,7 @@
 
 import type { BudgetCategoryItem } from '../../types/planner';
 
+/** Configuration options for computing a water-filling trade-off scenario. */
 export interface TradeoffOptions {
   readonly id: string;
   readonly title: string;
@@ -15,6 +16,7 @@ export interface TradeoffOptions {
   readonly maxCutRatio?: number | undefined;
 }
 
+/** Parameters for distributing proportional budget cuts in an iterative step. */
 export interface DistributeParams {
   readonly activeIds: readonly string[];
   readonly shortfall: number;

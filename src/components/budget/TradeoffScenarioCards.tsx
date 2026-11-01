@@ -11,6 +11,7 @@ interface TradeoffScenarioCardsProps {
   readonly onApplyTradeOff: (scenario: TradeOffScenario) => void;
 }
 
+/** Renders interactive trade-off scenario recommendation cards when budget is in overrun. */
 export const TradeoffScenarioCards: React.FC<TradeoffScenarioCardsProps> = React.memo(
   ({ scenarios, onApplyTradeOff }) => {
     if (scenarios.length === 0) return null;

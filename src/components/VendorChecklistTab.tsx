@@ -19,6 +19,7 @@ interface ChecklistTabProps {
   ) => void;
 }
 
+/** Tab panel managing vendor hiring checklist with filter tabs, advance payments, and metrics rollup. */
 export const VendorChecklistTab: React.FC<ChecklistTabProps> = ({ items, summary, onUpdateStatus }) => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'booked' | 'overdue'>('all');
 

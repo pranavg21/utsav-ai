@@ -5,6 +5,7 @@
 import type { BudgetCategoryName, OccasionType } from '../../types/planner';
 import { SHARE_SUM_TOLERANCE, TARGET_TOTAL_SHARE } from '../shared/constants';
 
+/** Baseline category budget percentage shares for Indian weddings. */
 export const WEDDING_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Venue & Logistics': 0.26,
   'Catering & Hospitality': 0.32,
@@ -14,8 +15,10 @@ export const WEDDING_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Contingency Reserve': 0.08,
 };
 
+/** Default fallback category share distribution (wedding). */
 export const BASE_CATEGORY_SHARES = WEDDING_CATEGORY_SHARES;
 
+/** Baseline category budget percentage shares for milestone birthdays. */
 export const BIRTHDAY_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Venue & Logistics': 0.15,
   'Catering & Hospitality': 0.35,
@@ -25,6 +28,7 @@ export const BIRTHDAY_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Contingency Reserve': 0.05,
 };
 
+/** Baseline category budget percentage shares for community festivals and gatherings. */
 export const COMMUNITY_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Venue & Logistics': 0.2,
   'Catering & Hospitality': 0.2,
@@ -34,6 +38,11 @@ export const COMMUNITY_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Contingency Reserve': 0.1,
 };
 
+/**
+ * Retrieves the baseline category budget share distribution for a celebration occasion.
+ * @param occasion Celebration occasion vertical.
+ * @returns Map of budget categories to their fractional share (summing to 1.0).
+ */
 export function getCategorySharesForOccasion(occasion: OccasionType): Record<BudgetCategoryName, number> {
   switch (occasion) {
     case 'wedding':

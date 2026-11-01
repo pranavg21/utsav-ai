@@ -6,6 +6,7 @@ import type { ProvenanceBadgeData, DeterministicReason } from '../../types/plann
 
 export type { ProvenanceBadgeData, DeterministicReason };
 
+/** Origin source of celebration plan data (Gemini LLM or deterministic fallback). */
 export type ProvenanceSource = 'gemini' | 'deterministic';
 
 /** Strongly typed envelope wrapping domain payloads with verified provenance. */

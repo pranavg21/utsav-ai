@@ -10,6 +10,7 @@ import { THEME_GENERATION_DEBOUNCE_MS } from '../domain/shared/constants';
 import { generateThemesWithAi } from '../services/gemini/planner';
 import { extractErrorMessage } from '../utils/uiHelpers';
 
+/** Return signature for the useThemes celebration ideas hook. */
 export interface UseThemesReturn {
   readonly themes: readonly PersonalizedConcept[];
   readonly provenance: ProvenanceBadgeData | null;
@@ -18,6 +19,11 @@ export interface UseThemesReturn {
   readonly refreshThemes: () => void;
 }
 
+/**
+ * Manages asynchronous theme generation with 600ms debounce and stale response invalidation.
+ * @param context Current celebration event context with occasion and guest demographics.
+ * @returns Object with theme ideas, provenance badge data, loading state, error, and refresh trigger.
+ */
 export function useThemes(context: EventContext): UseThemesReturn {
   const [themes, setThemes] = useState<readonly PersonalizedConcept[]>([]);
   const [provenance, setProvenance] = useState<ProvenanceBadgeData | null>(null);
@@ -59,11 +65,5 @@ export function useThemes(context: EventContext): UseThemesReturn {
     return () => clearTimeout(timer);
   }, [fetchThemes, context]);
 
-  return {
-    themes,
-    provenance,
-    loading,
-    error,
-    refreshThemes,
-  };
+  return { themes, provenance, loading, error, refreshThemes };
 }

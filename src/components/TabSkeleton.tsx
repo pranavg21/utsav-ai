@@ -4,6 +4,7 @@
 
 import React from 'react';
 
+/** Accessible fallback placeholder skeleton displayed during lazy tab suspense loading. */
 export const TabSkeleton: React.FC = () => (
   <div
     role="status"

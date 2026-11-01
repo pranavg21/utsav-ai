@@ -19,6 +19,7 @@ const FALLBACK_BADGE_STYLE =
   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ' +
   'bg-amber-500/15 text-amber-400 border border-amber-500/30';
 
+/** Provenance badge displaying whether data originated from Gemini AI or deterministic fallback. */
 export const ProvenanceBadge: React.FC<BadgeProps> = React.memo(({ provenance, className = '' }) => {
   if (provenance.source === 'gemini') {
     return (

@@ -5,6 +5,7 @@
 
 import type { BudgetCategoryItem, TradeOffScenario } from '../../types/planner';
 
+/** Options for constructing a trade-off optimization scenario. */
 export interface ScenarioBuilderOptions {
   readonly id: string;
   readonly title: string;
@@ -17,8 +18,9 @@ export interface ScenarioBuilderOptions {
 }
 
 /**
- * Distributes required savings proportionally across eligible categories
- * using a custom weight selector function. Categories with weight 0 are protected.
+ * Distributes required savings proportionally across eligible categories using custom weights.
+ * @param options Scenario parameters including overrun, items, and cut weight function.
+ * @returns Fully constructed trade-off scenario with item adjustments.
  */
 export function buildScenarioOption(options: ScenarioBuilderOptions): TradeOffScenario {
   const {
@@ -51,16 +53,20 @@ export function buildScenarioOption(options: ScenarioBuilderOptions): TradeOffSc
     };
   });
 
-  const revisedTotalSpend = categoryAdjustments.reduce((sum, adj) => sum + adj.revisedAmount, 0);
-  const totalSavings = items.reduce((sum, i) => sum + i.projectedAmount, 0) - revisedTotalSpend;
+  const totalSavings = categoryAdjustments.reduce(
+    (sum, adj) => sum + Math.abs(adj.deltaAmount),
+    0
+  );
+  const totalProjected = items.reduce((sum, item) => sum + item.projectedAmount, 0);
 
   return {
     id,
     title,
     strategySummary,
-    revisedTotalSpend,
+    revisedTotalSpend: totalProjected - totalSavings,
     totalSavings,
+    isFeasible: totalSavings >= overrunAmount,
+    requiredAdditionalFunds: Math.max(0, overrunAmount - totalSavings),
     categoryAdjustments,
   };
 }
-

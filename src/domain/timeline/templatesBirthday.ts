@@ -4,6 +4,7 @@
 
 import type { TaskTemplate } from './templates';
 
+/** Task templates tailored for milestone and kids' birthday celebrations. */
 export const BIRTHDAY_TASK_TEMPLATES: readonly TaskTemplate[] = [
   { id: 'task-venue', title: 'Book Party Hall / Play Zone', phase: 'Foundation', timelineFraction: 0.9, dependsOn: [] },
   {
@@ -50,9 +51,9 @@ export const BIRTHDAY_TASK_TEMPLATES: readonly TaskTemplate[] = [
   },
   {
     id: 'task-dayof',
-    title: 'Birthday Celebration & Cake Cutting',
+    title: 'Cake Cutting & Party Run',
     phase: 'Final Execution',
-    timelineFraction: 0.02,
+    timelineFraction: 0.05,
     dependsOn: ['task-rehearsal'],
   },
 ];

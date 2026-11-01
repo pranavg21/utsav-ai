@@ -1,5 +1,5 @@
 /**
- * @fileoverview Trade-off scenario generation with iterative water-filling cap redistribution.
+ * @fileoverview Trade-off scenario evaluation and budget feasibility analysis.
  */
 
 import type {
@@ -8,108 +8,18 @@ import type {
   EventContext,
   TradeOffScenario,
 } from '../../types/planner';
-import { AGGRESSIVE_MAX_CUT_RATIO, DEFAULT_MAX_CUT_RATIO } from '../shared/constants';
-import type { TradeoffOptions, DistributeParams } from './types';
+import { AGGRESSIVE_MAX_CUT_RATIO } from '../shared/constants';
 import { isProtectedByMustHaves } from './allocation';
+import { buildWaterFillingScenario } from './waterFilling';
 
 export type { TradeoffOptions } from './types';
+export { buildWaterFillingScenario } from './waterFilling';
 
-function distributeCuts(params: DistributeParams): {
-  remaining: number;
-  nextActive: string[];
-  progress: boolean;
-} {
-  const { activeIds, shortfall, weights, caps, cuts } = params;
-  const totalWeight = activeIds.reduce((sum, id) => sum + (weights.get(id) ?? 0), 0);
-  if (totalWeight <= 0) return { remaining: shortfall, nextActive: [], progress: false };
-
-  let remaining = shortfall;
-  const nextActive: string[] = [];
-  let progress = false;
-
-  for (const id of activeIds) {
-    const w = weights.get(id) ?? 0;
-    const share = Math.round((shortfall * w) / totalWeight);
-    const current = cuts.get(id) ?? 0;
-    const maxAllowed = caps.get(id) ?? 0;
-    if (current + share >= maxAllowed) {
-      cuts.set(id, maxAllowed);
-      remaining -= maxAllowed - current;
-    } else {
-      cuts.set(id, current + share);
-      remaining -= share;
-      nextActive.push(id);
-    }
-    progress = true;
-  }
-  return { remaining, nextActive, progress };
-}
-
-export function buildWaterFillingScenario(options: TradeoffOptions): TradeOffScenario {
-  const { id, title, description, whatYouLose, items, overrunAmount, getWeight, maxCutRatio = DEFAULT_MAX_CUT_RATIO } = options;
-  const caps = new Map<string, number>();
-  const weights = new Map<string, number>();
-  const cuts = new Map<string, number>();
-
-  for (const item of items) {
-    weights.set(item.id, getWeight(item));
-    caps.set(item.id, Math.round(item.projectedAmount * maxCutRatio));
-    cuts.set(item.id, 0);
-  }
-
-  let remaining = overrunAmount;
-  let activeIds = items.filter((item) => (weights.get(item.id) ?? 0) > 0).map((i) => i.id);
-
-  while (remaining > 1 && activeIds.length > 0) {
-    const step = distributeCuts({ activeIds, shortfall: remaining, weights, caps, cuts });
-    if (!step.progress) break;
-    remaining = step.remaining;
-    activeIds = step.nextActive;
-  }
-
-  const categoryAdjustments = items.map((item) => {
-    const cut = cuts.get(item.id) ?? 0;
-    return {
-      category: item.category,
-      previousAmount: item.projectedAmount,
-      revisedAmount: item.projectedAmount - cut,
-      deltaAmount: cut === 0 ? 0 : -cut,
-      actionNote: cut > 0 ? `Optimized by ₹${cut.toLocaleString('en-IN')}: ${whatYouLose}` : 'Protected; zero reduction.',
-    };
-  });
-
-  const totalCut = Array.from(cuts.values()).reduce((sum, c) => sum + c, 0);
-  const totalProjected = items.reduce((sum, i) => sum + i.projectedAmount, 0);
-  const isFeasible = totalCut >= overrunAmount - 1;
-  const requiredAdditionalFunds = isFeasible ? 0 : Math.max(0, overrunAmount - totalCut);
-
-  return {
-    id,
-    title,
-    strategySummary: `${description} (${whatYouLose})`,
-    revisedTotalSpend: totalProjected - totalCut,
-    totalSavings: totalCut,
-    isFeasible,
-    requiredAdditionalFunds,
-    categoryAdjustments,
-  };
-}
-
-export function evaluateBudgetAndTradeoffs(
+function generateScenarios(
   context: EventContext,
-  items: ReadonlyArray<BudgetCategoryItem>
-): BudgetEvaluationResult {
-  const totalBudget = Math.max(1, context.totalBudget);
-  const totalProjected = items.reduce((sum, item) => sum + item.projectedAmount, 0);
-  const overrunAmount = Math.max(0, totalProjected - totalBudget);
-  const overrunPercentage = Number(((overrunAmount / totalBudget) * 100).toFixed(1));
-  const isOverBudget = overrunAmount > 0;
-  const tradeOffScenarios = isOverBudget ? generateScenarios(context, items, overrunAmount) : [];
-
-  return { totalBudget, totalProjected, overrunAmount, overrunPercentage, isOverBudget, items: [...items], tradeOffScenarios };
-}
-
-function generateScenarios(context: EventContext, items: ReadonlyArray<BudgetCategoryItem>, overrun: number): TradeOffScenario[] {
+  items: ReadonlyArray<BudgetCategoryItem>,
+  overrun: number
+): TradeOffScenario[] {
   const topTwo = new Set(context.priorityRanking.slice(0, 2));
   return [
     buildWaterFillingScenario({
@@ -142,4 +52,32 @@ function generateScenarios(context: EventContext, items: ReadonlyArray<BudgetCat
       maxCutRatio: AGGRESSIVE_MAX_CUT_RATIO,
     }),
   ].filter((s) => s.totalSavings > 0);
+}
+
+/**
+ * Evaluates budget totals, overrun percentages, and computes viable trade-off scenarios.
+ * @param context Celebration event context with priorities and constraints.
+ * @param items Current budget category line items.
+ * @returns Complete budget evaluation result including overrun status and scenarios.
+ */
+export function evaluateBudgetAndTradeoffs(
+  context: EventContext,
+  items: ReadonlyArray<BudgetCategoryItem>
+): BudgetEvaluationResult {
+  const totalBudget = Math.max(1, context.totalBudget);
+  const totalProjected = items.reduce((sum, item) => sum + item.projectedAmount, 0);
+  const overrunAmount = Math.max(0, totalProjected - totalBudget);
+  const overrunPercentage = Number(((overrunAmount / totalBudget) * 100).toFixed(1));
+  const isOverBudget = overrunAmount > 0;
+  const tradeOffScenarios = isOverBudget ? generateScenarios(context, items, overrunAmount) : [];
+
+  return {
+    totalBudget,
+    totalProjected,
+    overrunAmount,
+    overrunPercentage,
+    isOverBudget,
+    items: [...items],
+    tradeOffScenarios,
+  };
 }

@@ -15,6 +15,7 @@ interface ApiKeyModalProps {
   readonly onClose: () => void;
 }
 
+/** Accessible BYOK modal dialog allowing users to enter and persist their Gemini API key. */
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = React.memo(
   ({ isOpen, apiKey, onChangeKey, onSave, onClear, onClose }) => {
     const handleKeyDown = useCallback(

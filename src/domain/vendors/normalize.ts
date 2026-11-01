@@ -17,6 +17,7 @@ export {
   type NormalizeQuoteOptions,
 } from './normalizeExtracted';
 
+/** Evaluation metrics comparing a vendor quote against event capacity and allocated category budget. */
 export interface QuoteComparisonResult {
   readonly quoteId: string;
   readonly vendorName: string;
@@ -28,6 +29,7 @@ export interface QuoteComparisonResult {
   readonly questionCount: number;
 }
 
+/** Detailed cost breakdown including headline, base calculation, GST rate, and all-in cost. */
 export interface AllInCostBreakdown {
   readonly headlineQuote: number;
   readonly baseAmount: number;
@@ -50,6 +52,18 @@ function isPerPlateQuote(quote: VendorQuote): boolean {
   return quote.quotedPrice > 0 && quote.quotedPrice < PER_UNIT_PRICE_THRESHOLD;
 }
 
+/**
+ * Calculates comprehensive all-in cost for a vendor quote including buffer and GST.
+ * @param quote Vendor quote details including headline price or per-unit rate.
+ * @param guestCount Total planned celebration guest headcount.
+ * @param options Optional overrides for headcount buffer and GST rate.
+ * @returns Breakdown of base amount, GST rate, GST amount, and total all-in cost.
+ * @example
+ * ```ts
+ * const breakdown = calculateAllInCost(quote, 150);
+ * // breakdown.allInCost includes base amount + calculated GST
+ * ```
+ */
 export function calculateAllInCost(
   quote: VendorQuote,
   guestCount: number,
@@ -72,6 +86,13 @@ export function calculateAllInCost(
   };
 }
 
+/**
+ * Compares a vendor quote against event guest count and category budget.
+ * @param quote Vendor quote under evaluation.
+ * @param context Event context with planned guest count.
+ * @param categoryBudget Allocated budget for this vendor category.
+ * @returns Quote comparison metrics including budget delta and capacity gap.
+ */
 export function compareQuoteToContext(
   quote: VendorQuote,
   context: EventContext,

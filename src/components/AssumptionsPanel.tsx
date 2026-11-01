@@ -16,6 +16,7 @@ const inputCls =
   'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-saffron-500 focus:outline-none';
 const labelCls = 'mb-1 block text-xs font-medium text-slate-400';
 
+/** Collapsible panel allowing customization of financial assumptions like buffers, multipliers, and GST. */
 export const AssumptionsPanel: React.FC<AssumptionsPanelProps> = React.memo(
   ({ assumptions, onUpdate }) => {
     const [isOpen, setIsOpen] = useState(false);

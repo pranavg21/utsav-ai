@@ -32,6 +32,11 @@ function makeQuote(opts: QuoteOptions): VendorQuote {
   };
 }
 
+/**
+ * Returns preset benchmark vendor quotes tailored for a given celebration occasion.
+ * @param occasion Target celebration vertical (wedding, birthday, community).
+ * @returns Array of realistic vendor quotes with inclusions and hidden risks.
+ */
 export function getPresetVendorQuotes(occasion: OccasionType): VendorQuote[] {
   const presets: Record<OccasionType, VendorQuote[]> = {
     wedding: [

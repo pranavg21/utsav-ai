@@ -15,6 +15,7 @@ const inputCls =
   'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-saffron-500 focus:outline-none';
 const labelCls = 'mb-1 block text-xs font-medium text-slate-400';
 
+/** Form inputs for attendee age groups, accessibility requirements, and must-have priorities. */
 export const DemographicsConstraints: React.FC<DemographicsConstraintsProps> = React.memo(
   ({ context, onUpdateField }) => {
     const [accessDraft, setAccessDraft] = useState(context.accessibilityNeeds.join(', '));

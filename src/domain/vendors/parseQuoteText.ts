@@ -56,6 +56,19 @@ function extractGuestCapacity(text: string, defaultGuests: number): number {
   return defaultGuests;
 }
 
+/**
+ * Analyzes unstructured vendor quote text to extract price, capacity, and risk flags.
+ * @param rawText Unstructured text or message containing vendor quote details.
+ * @param category Celebration budget category for the vendor.
+ * @param defaultGuests Fallback guest headcount if not detected in text.
+ * @param provenance Optional provenance metadata tracking GenAI / deterministic origin.
+ * @returns Fully normalized VendorQuote structure with all-in costs and risks.
+ * @example
+ * ```ts
+ * const quote = analyzeRawQuoteText('₹1,200 per plate for 150 guests', 'Catering & Hospitality');
+ * // quote.quotedPrice === 180000
+ * ```
+ */
 export function analyzeRawQuoteText(
   rawText: string,
   category: BudgetCategoryName,

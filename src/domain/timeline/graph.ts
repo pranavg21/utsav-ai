@@ -10,8 +10,15 @@ import {
 } from './templates';
 
 export type { TaskTemplate } from './templates';
+
+/** Baseline task templates for Indian weddings. */
 export const TASK_TEMPLATES = WEDDING_TASK_TEMPLATES;
 
+/**
+ * Initializes celebration timeline tasks with occasion-specific dependencies and baseline deadlines.
+ * @param context Celebration event context with occasion and days until event.
+ * @returns Array of initialized timeline tasks.
+ */
 export function buildInitialCelebrationTasks(context: EventContext): TimelineTask[] {
   const totalDays = Math.max(14, context.daysUntilEvent);
   const templates = getTaskTemplatesForOccasion(context.occasion);
@@ -79,6 +86,11 @@ function buildGraph(tasks: ReadonlyArray<TimelineTask>): {
   return { inDegree, graph };
 }
 
+/**
+ * Computes topological execution order of tasks across the directed acyclic graph.
+ * @param tasks Tasks to topologically sequence.
+ * @returns Ok result with array of ordered task IDs, or Err if dependency cycle exists.
+ */
 export function getTopologicalOrder(tasks: ReadonlyArray<TimelineTask>): Result<string[], string> {
   const { inDegree, graph } = buildGraph(tasks);
   const queue = tasks.filter((t) => inDegree.get(t.id) === 0).map((t) => t.id);

@@ -12,6 +12,7 @@ import type {
 import type { ChangeRequestInput } from '../types/plannerExtended';
 import type { VendorChecklistItem, VendorChecklistStatus } from '../domain/vendors/types';
 
+/** Core lifecycle state management actions (presets, context edits, changes, task statuses). */
 export type LifecycleAction =
   | { readonly type: 'LOAD_PRESET'; readonly payload: CelebrationPreset }
   | { readonly type: 'UPDATE_CONTEXT'; readonly payload: Partial<EventContext> }
@@ -25,6 +26,7 @@ export type LifecycleAction =
       };
     };
 
+/** Specific domain feature actions (budget, quotes, sub-events, checklists). */
 export type DomainAction =
   | { readonly type: 'SET_PROJECTED'; readonly payload: { readonly categoryId: string; readonly amount: number } }
   | { readonly type: 'TOGGLE_VERIFIED'; readonly payload: { readonly categoryId: string } }
@@ -56,4 +58,5 @@ export type DomainAction =
       readonly payload: readonly VendorChecklistItem[];
     };
 
+/** Union of all dispatchable actions accepted by the root planReducer. */
 export type PlanAction = LifecycleAction | DomainAction;

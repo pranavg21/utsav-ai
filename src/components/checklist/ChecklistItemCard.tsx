@@ -25,6 +25,7 @@ function isVendorChecklistStatus(val: string): val is VendorChecklistStatus {
   return STATUS_OPTS.some((s) => s === val);
 }
 
+/** Interactive card displaying vendor checklist status, must-ask questions, advance, and price locking. */
 export const ChecklistItemCard: React.FC<CardProps> = React.memo(({ item, onStatusChange }) => {
   const [expanded, setExpanded] = useState(false);
   const [priceInput, setPriceInput] = useState(String(item.bookedPrice ?? item.estimatedCost ?? ''));

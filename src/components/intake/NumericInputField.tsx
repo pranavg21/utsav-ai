@@ -20,6 +20,7 @@ const inputCls =
   'focus:border-saffron-500 focus:outline-none';
 const labelCls = 'mb-1 block text-xs font-medium text-slate-400';
 
+/** Accessible numeric input field with boundary validation and live error messaging. */
 export const NumericInputField: React.FC<NumericInputFieldProps> = React.memo(
   ({ id, label, value, min, max, ariaLabel, onUpdate }) => {
     const [draft, setDraft] = useState(String(value));

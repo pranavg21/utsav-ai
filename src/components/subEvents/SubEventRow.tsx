@@ -6,6 +6,7 @@ import React from 'react';
 import type { SubEvent } from '../../domain/subEvents/types';
 import { formatINR } from '../../utils/uiHelpers';
 
+/** Props for SubEventRow. */
 export interface SubEventRowProps {
   readonly subEvent: SubEvent;
   readonly totalBudget: number;
@@ -31,6 +32,7 @@ const SHARE_INPUT_CLASS =
   'w-20 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 ' +
   'focus:border-saffron-500 focus:outline-none';
 
+/** Interactive row allowing guest headcount and budget share adjustment for a sub-event ceremony. */
 export const SubEventRow: React.FC<SubEventRowProps> = ({
   subEvent,
   totalBudget,

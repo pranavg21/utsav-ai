@@ -23,6 +23,7 @@ const PROMPT_INPUT_CLASS =
   'w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm ' +
   'text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none';
 
+/** Interactive simulation panel applying natural language change requests and predefined budget/timeline shocks. */
 export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [lastApplied, setLastApplied] = useState<LastAppliedState | null>(null);

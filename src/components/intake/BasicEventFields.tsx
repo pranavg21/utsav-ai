@@ -17,6 +17,7 @@ const inputCls =
   'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-saffron-500 focus:outline-none';
 const labelCls = 'mb-1 block text-xs font-medium text-slate-400';
 
+/** Form inputs capturing primary celebration parameters (occasion, name, budget, guests, days). */
 export const BasicEventFields: React.FC<BasicEventFieldsProps> = React.memo(({ context, onUpdateField }) => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

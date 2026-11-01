@@ -4,6 +4,7 @@
 
 import type { VendorChecklistItem } from './types';
 
+/** Default vendor checklist blueprints for community festivals and gatherings. */
 export const COMMUNITY_VENDOR_TEMPLATES: readonly VendorChecklistItem[] = [
   {
     id: 'chk-comm-venue',

@@ -5,11 +5,13 @@
 import { extractErrorMessage } from '../../utils/uiHelpers';
 import { GEMINI_MODEL_ID, GEMINI_FALLBACK_MODELS } from './config';
 
+/** Successful response envelope from the failover dispatcher recording output and used model. */
 export interface ModelCallOutput {
   readonly text: string;
   readonly usedModel: string;
 }
 
+/** Interface for invoking Gemini models via the Google GenAI SDK. */
 export interface ModelInvoker {
   readonly models: {
     readonly generateContent: (args: {
@@ -29,6 +31,14 @@ function isRetryableModelError(errMsg: string): boolean {
   );
 }
 
+/**
+ * Dispatches a content generation request across candidate models with automatic failover.
+ * @param ai SDK invoker instance.
+ * @param prompt Prompt string.
+ * @param reqConfig Generation parameters and schema config.
+ * @param signal Abort signal for timeout cancellation.
+ * @returns ModelCallOutput with response text and model name.
+ */
 export async function dispatchWithFailover(
   ai: ModelInvoker,
   prompt: string,
@@ -59,5 +69,5 @@ export async function dispatchWithFailover(
     }
   }
 
-  throw lastErr ?? new Error('Model candidate execution aborted');
+  throw lastErr;
 }

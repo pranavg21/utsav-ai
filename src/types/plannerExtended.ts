@@ -109,6 +109,7 @@ export interface PersonalizedConcept {
   readonly budgetFriendlyAlternative: string;
 }
 
+/** Explicit cause for falling back to deterministic computation instead of Gemini AI. */
 export type DeterministicReason =
   | 'no-api-key'
   | 'quota-exceeded'
@@ -116,6 +117,7 @@ export type DeterministicReason =
   | 'timeout'
   | 'offline';
 
+/** Metadata recording origin and attribution of generated celebration plan elements. */
 export interface ProvenanceBadgeData {
   readonly source: 'gemini' | 'deterministic';
   readonly model?: string | undefined;

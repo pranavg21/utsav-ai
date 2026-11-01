@@ -24,6 +24,7 @@ interface IdeasTabProps {
   readonly context: EventContext;
 }
 
+/** Tab panel displaying personalized celebration concepts with GenAI provenance and live refresh. */
 export const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
   const { themes, provenance, loading, error, refreshThemes } = useThemes(context);
 

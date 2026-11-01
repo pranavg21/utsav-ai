@@ -4,6 +4,7 @@
 
 import type { TaskTemplate } from './templates';
 
+/** Task templates tailored for community cultural fests and society gatherings. */
 export const COMMUNITY_TASK_TEMPLATES: readonly TaskTemplate[] = [
   {
     id: 'task-approvals',
@@ -48,25 +49,24 @@ export const COMMUNITY_TASK_TEMPLATES: readonly TaskTemplate[] = [
     dependsOn: ['task-venue'],
   },
   {
-    id: 'task-logistics',
-    title: 'Deploy Sanitation & Volunteer Marshals',
+    id: 'task-invitations',
+    title: 'Publish Society Notice & WhatsApp Circular',
     phase: 'Guest & Logistics',
-    timelineFraction: 0.4,
-    dependsOn: ['task-venue'],
+    timelineFraction: 0.35,
+    dependsOn: ['task-approvals'],
   },
   {
     id: 'task-rehearsal',
-    title: 'PA Sound Testing & Fire Safety Dry Run',
+    title: 'Full Pandal Power & Audio Trial Run',
     phase: 'Final Execution',
     timelineFraction: 0.1,
-    dependsOn: ['task-decor', 'task-entertainment', 'task-logistics'],
+    dependsOn: ['task-decor', 'task-entertainment'],
   },
   {
     id: 'task-dayof',
-    title: 'Festival Inauguration & Crowd Protocol',
+    title: 'Festival Gate Management & Crowd Flow',
     phase: 'Final Execution',
     timelineFraction: 0.02,
     dependsOn: ['task-rehearsal'],
   },
 ];
-

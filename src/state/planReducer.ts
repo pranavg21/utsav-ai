@@ -1,32 +1,31 @@
 /**
- * @fileoverview Pure state reducer for UtsavAI celebration plans with immutable transitions.
+ * @fileoverview Main state management reducer for celebration planning.
  */
 
 import type {
-  BudgetCategoryItem,
   CelebrationPreset,
   EventContext,
+  BudgetCategoryItem,
   TimelineTask,
   VendorQuote,
 } from '../types/planner';
-import type { PlanAction, LifecycleAction, DomainAction } from './planActions';
 import type { SubEvent } from '../domain/subEvents/types';
-import { getSubEventsForOccasion } from '../domain/subEvents/types';
-import { buildInitialBudgetItems, mergeBudgetAllocations } from '../domain/budget/allocation';
-import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
-import { propagateDelay, compressTimeline, recalculateTimeline } from '../domain/timeline/propagate';
-import { getPresetVendorQuotes } from '../domain/vendors/quotes';
-import type { ChangeRequestInput } from '../types/plannerExtended';
-import { resolveChangeDeltas } from '../domain/changeRequest/aggregate';
 import type { VendorChecklistItem } from '../domain/vendors/types';
+import { buildInitialBudgetItems } from '../domain/budget/allocation';
+import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
+import { getPresetVendorQuotes } from '../domain/vendors/quotes';
+import { getSubEventsForOccasion } from '../domain/subEvents/types';
 import { getVendorChecklistTemplates, syncChecklistWithTimeline } from '../domain/vendors/checklist';
+import type { PlanAction, LifecycleAction, DomainAction } from './planActions';
 import {
   handleDomainBudget,
   handleDomainQuote,
   handleDomainSubEvent,
   handleDomainChecklist,
 } from './domainHandlers';
+import { reduceLifecycle } from './lifecycleHandlers';
 
+/** Complete state schema of the UtsavAI celebration planning engine. */
 export interface PlanState {
   readonly context: EventContext;
   readonly budgetItems: ReadonlyArray<BudgetCategoryItem>;
@@ -36,6 +35,11 @@ export interface PlanState {
   readonly checklist: ReadonlyArray<VendorChecklistItem>;
 }
 
+/**
+ * Creates the initial celebration plan state from a preset blueprint.
+ * @param preset Celebration preset containing baseline event context.
+ * @returns Fully populated initial PlanState.
+ */
 export function createInitialState(preset: CelebrationPreset): PlanState {
   const tasks = buildInitialCelebrationTasks(preset.context);
   const checklist = syncChecklistWithTimeline(
@@ -53,67 +57,11 @@ export function createInitialState(preset: CelebrationPreset): PlanState {
   };
 }
 
-function handleUpdateContext(state: PlanState, updates: Partial<EventContext>): PlanState {
-  const merged = { ...state.context, ...updates };
-  const budgetItems = mergeBudgetAllocations(merged, state.budgetItems);
-  const occasionChanged = updates.occasion && updates.occasion !== state.context.occasion;
-  const quotes = occasionChanged ? getPresetVendorQuotes(updates.occasion) : state.quotes;
-  const subEvents = occasionChanged ? getSubEventsForOccasion(updates.occasion) : state.subEvents;
-  const checklist = occasionChanged
-    ? syncChecklistWithTimeline(getVendorChecklistTemplates(updates.occasion), state.tasks)
-    : state.checklist;
-
-  return { ...state, context: merged, budgetItems, quotes, subEvents, checklist };
-}
-
-function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanState {
-  const d = resolveChangeDeltas(payload, state.context.totalBudget);
-  const overrun = d.costOverrunPercent ?? payload.costOverrunPercent ?? 0;
-
-  const newGuests = Math.max(1, state.context.guestCount + d.guestDelta);
-  const newBudget = Math.round(state.context.totalBudget * (1 + d.budgetDeltaPercent / 100));
-  const newDays = Math.max(7, state.context.daysUntilEvent - d.timelineDeltaDays);
-  const nextContext: EventContext = { ...state.context, guestCount: newGuests, totalBudget: newBudget, daysUntilEvent: newDays };
-
-  const rawBudget = mergeBudgetAllocations(nextContext, state.budgetItems);
-  const budgetItems = overrun === 0 ? rawBudget : rawBudget.map((item) => ({
-    ...item,
-    projectedAmount: Math.round(item.projectedAmount * (1 + overrun / 100)),
-  }));
-
-  let tasks = d.timelineDeltaDays !== 0 ? compressTimeline(state.tasks, d.timelineDeltaDays) : state.tasks;
-  if (d.vendorDelay && d.vendorDelay.days > 0) {
-    tasks = propagateDelay(tasks, d.vendorDelay.taskId, d.vendorDelay.days);
-  }
-  const checklist = syncChecklistWithTimeline(state.checklist, tasks);
-  return { ...state, context: nextContext, budgetItems, tasks, checklist };
-}
-
-function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 'SET_TASK_STATUS' }>): PlanState {
-  const { taskId, status, delayDays = 0 } = action.payload;
-  const ownDelay = status === 'delayed' ? (delayDays > 0 ? delayDays : 10) : 0;
-  const overrides = new Map<string, number>([[taskId, ownDelay]]);
-  const updatedTasks = state.tasks.map((t) => (t.id === taskId ? { ...t, status, ownDelayDays: ownDelay } : t));
-  const recalcResult = recalculateTimeline(updatedTasks, overrides);
-  const tasks = recalcResult.ok ? recalcResult.value : updatedTasks;
-  const checklist = syncChecklistWithTimeline(state.checklist, tasks);
-  return { ...state, tasks, checklist };
-}
-
 function isLifecycleAction(action: PlanAction): action is LifecycleAction {
   return (
     action.type === 'LOAD_PRESET' || action.type === 'UPDATE_CONTEXT' ||
     action.type === 'APPLY_CHANGE' || action.type === 'SET_TASK_STATUS'
   );
-}
-
-function reduceLifecycle(state: PlanState, action: LifecycleAction): PlanState {
-  switch (action.type) {
-    case 'LOAD_PRESET': return createInitialState(action.payload);
-    case 'UPDATE_CONTEXT': return handleUpdateContext(state, action.payload);
-    case 'APPLY_CHANGE': return handleApplyChange(state, action.payload);
-    case 'SET_TASK_STATUS': return handleTaskAction(state, action);
-  }
 }
 
 function reduceDomain(state: PlanState, action: DomainAction): PlanState {
@@ -133,7 +81,15 @@ function reduceDomain(state: PlanState, action: DomainAction): PlanState {
   }
 }
 
+/**
+ * Root state transition reducer processing lifecycle and domain actions.
+ * @param state Current celebration plan state.
+ * @param action Dispatched celebration plan action.
+ * @returns Next immutable celebration plan state.
+ */
 export function planReducer(state: PlanState, action: PlanAction): PlanState {
-  if (isLifecycleAction(action)) return reduceLifecycle(state, action);
+  if (isLifecycleAction(action)) {
+    return reduceLifecycle(state, action, (act) => createInitialState(act.payload));
+  }
   return reduceDomain(state, action);
 }

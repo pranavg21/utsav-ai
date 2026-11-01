@@ -2,6 +2,7 @@
  * @fileoverview Shared Indian numerical multipliers (lakh, crore, k) for celebration budgets.
  */
 
+/** Numerical multipliers for Indian numbering units (k, lakh, crore). */
 export const INR_MULTIPLIERS = {
   k: 1000,
   lakh: 100000,

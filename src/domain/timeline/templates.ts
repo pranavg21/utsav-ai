@@ -9,6 +9,7 @@ import { COMMUNITY_TASK_TEMPLATES } from './templatesCommunity';
 export { BIRTHDAY_TASK_TEMPLATES } from './templatesBirthday';
 export { COMMUNITY_TASK_TEMPLATES } from './templatesCommunity';
 
+/** Mapping of common celebration vendor categories to their primary timeline task IDs. */
 export const VENDOR_DELAY_TASK_IDS = {
   caterer: 'task-caterer',
   venue: 'task-venue',
@@ -16,6 +17,7 @@ export const VENDOR_DELAY_TASK_IDS = {
   decorator: 'task-decor',
 } as const;
 
+/** Blueprint template defining a celebration task and its relative timeline position. */
 export interface TaskTemplate {
   readonly id: string;
   readonly title: string;
@@ -24,6 +26,7 @@ export interface TaskTemplate {
   readonly dependsOn: readonly string[];
 }
 
+/** Default wedding execution task blueprints with critical dependencies. */
 export const WEDDING_TASK_TEMPLATES: readonly TaskTemplate[] = [
   { id: 'task-venue', title: 'Finalize Venue & Date', phase: 'Foundation', timelineFraction: 0.9, dependsOn: [] },
   {
@@ -79,6 +82,11 @@ export const WEDDING_TASK_TEMPLATES: readonly TaskTemplate[] = [
   },
 ];
 
+/**
+ * Retrieves the timeline task template set for a specified occasion vertical.
+ * @param occasion Target celebration vertical (wedding, birthday, community).
+ * @returns Array of task templates for timeline initialization.
+ */
 export function getTaskTemplatesForOccasion(occasion: OccasionType): readonly TaskTemplate[] {
   switch (occasion) {
     case 'wedding':

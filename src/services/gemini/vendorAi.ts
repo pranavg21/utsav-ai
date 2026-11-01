@@ -20,6 +20,11 @@ import type { AiResult } from './types';
 import type { VendorChecklistItem } from '../../domain/vendors/types';
 import { getVendorChecklistTemplates } from '../../domain/vendors/checklist';
 
+/**
+ * Generates an occasion-tailored vendor checklist using Gemini with deterministic fallback.
+ * @param context Celebration event context with priorities, guest count, and timeline.
+ * @returns AI result containing vendor checklist items and provenance metadata.
+ */
 export async function generateVendorChecklistWithAi(
   context: EventContext
 ): Promise<AiResult<readonly VendorChecklistItem[]>> {
@@ -57,6 +62,12 @@ export async function generateVendorChecklistWithAi(
   return output;
 }
 
+/**
+ * Extracts structured pricing, inclusions, and hidden risks from unstructured quote text using Gemini.
+ * @param rawQuoteText Unstructured pasted vendor quote text.
+ * @param category Target celebration budget category.
+ * @returns AI result containing structured quote extraction and provenance metadata.
+ */
 export async function extractVendorQuoteWithAi(
   rawQuoteText: string,
   category: BudgetCategoryName
@@ -92,4 +103,3 @@ export async function extractVendorQuoteWithAi(
 
   return output;
 }
-

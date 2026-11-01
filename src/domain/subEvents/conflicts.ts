@@ -4,6 +4,7 @@
 
 import type { SubEvent } from './types';
 
+/** Representation of a multi-event coordination conflict (capacity, overlap, transit, or budget). */
 export interface SubEventConflict {
   readonly id: string;
   readonly type: 'overlap' | 'capacity' | 'transit' | 'share';
@@ -67,6 +68,12 @@ function checkTransitConflicts(subEvents: ReadonlyArray<SubEvent>): SubEventConf
   return conflicts;
 }
 
+/**
+ * Detects schedule, capacity, venue transit, and budget share conflicts across celebration sub-events.
+ * @param subEvents Array of configured celebration sub-events.
+ * @param totalWeddingGuests Total overall celebration guest headcount limit.
+ * @returns Array of detected warnings and errors.
+ */
 export function detectSubEventConflicts(
   subEvents: ReadonlyArray<SubEvent>,
   totalWeddingGuests: number

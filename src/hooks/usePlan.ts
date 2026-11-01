@@ -4,17 +4,15 @@
 
 import { useReducer, useMemo, useCallback } from 'react';
 import type {
-  BudgetEvaluationResult,
   CelebrationPreset,
   EventContext,
   TaskStatus,
-  TimelineTask,
   TradeOffScenario,
   VendorQuote,
 } from '../types/planner';
 import type { ChangeRequestInput } from '../types/plannerExtended';
 import { WEDDING_PRESET } from '../data/presets';
-import { planReducer, createInitialState, type PlanState } from '../state/planReducer';
+import { planReducer, createInitialState } from '../state/planReducer';
 import {
   selectEvaluation,
   selectCategoryBudgets,
@@ -23,45 +21,16 @@ import {
   selectChecklistSummary,
   selectOverdueVendors,
 } from '../state/selectors';
-import type { VendorChecklistItem, VendorChecklistStatus, VendorChecklistSummary } from '../domain/vendors/types';
+import type { VendorChecklistItem, VendorChecklistStatus } from '../domain/vendors/types';
+import type { UsePlanReturn } from './usePlanTypes';
 
-export interface UsePlanReturn {
-  readonly state: PlanState;
-  readonly derived: {
-    readonly evaluation: BudgetEvaluationResult;
-    readonly categoryBudgets: Record<string, number>;
-    readonly bottlenecks: TimelineTask[];
-    readonly subEventRollup: { readonly totalSubEventGuests: number; readonly totalSharePercent: number };
-    readonly checklistSummary: VendorChecklistSummary;
-    readonly overdueVendors: readonly VendorChecklistItem[];
-  };
-  readonly actions: {
-    readonly loadPreset: (preset: CelebrationPreset) => void;
-    readonly updateContext: (updates: Partial<EventContext>) => void;
-    readonly applyChange: (change: ChangeRequestInput) => void;
-    readonly setProjected: (categoryId: string, amount: number) => void;
-    readonly toggleVerified: (categoryId: string) => void;
-    readonly applyTradeoff: (scenario: TradeOffScenario) => void;
-    readonly setTaskStatus: (taskId: string, status: TaskStatus, delayDays?: number) => void;
-    readonly addQuote: (quote: VendorQuote) => void;
-    readonly toggleQuoteVerified: (quoteId: string) => void;
-    readonly updateChecklistStatus: (
-      itemId: string,
-      status: VendorChecklistStatus,
-      options?: { readonly advancePaid?: number | undefined; readonly bookedPrice?: number | undefined }
-    ) => void;
-    readonly setChecklist: (checklist: readonly VendorChecklistItem[]) => void;
-    readonly updateSubEvent: (
-      subEventId: string,
-      updates: {
-        readonly name?: string | undefined;
-        readonly guestCount?: number | undefined;
-        readonly budgetSharePercent?: number | undefined;
-      }
-    ) => void;
-  };
-}
+export type { UsePlanReturn } from './usePlanTypes';
 
+/**
+ * Primary React hook managing state, selectors, and dispatchers for celebration planning.
+ * @param initialPreset Initial preset to bootstrap state from.
+ * @returns State, memoized selector results, and action callback dispatchers.
+ */
 export function usePlan(
   initialPreset: CelebrationPreset = { id: 'default', title: 'Default', context: WEDDING_PRESET }
 ): UsePlanReturn {
@@ -81,35 +50,45 @@ export function usePlan(
     (categoryId: string, amount: number) => dispatch({ type: 'SET_PROJECTED', payload: { categoryId, amount } }),
     []
   );
-  const toggleVerified = useCallback((categoryId: string) => dispatch({ type: 'TOGGLE_VERIFIED', payload: { categoryId } }), []);
-  const applyTradeoff = useCallback((scenario: TradeOffScenario) => dispatch({ type: 'APPLY_TRADEOFF', payload: { scenario } }), []);
+  const toggleVerified = useCallback(
+    (categoryId: string) => dispatch({ type: 'TOGGLE_VERIFIED', payload: { categoryId } }),
+    []
+  );
+  const applyTradeoff = useCallback(
+    (scenario: TradeOffScenario) => dispatch({ type: 'APPLY_TRADEOFF', payload: { scenario } }),
+    []
+  );
   const setTaskStatus = useCallback(
     (taskId: string, status: TaskStatus, delayDays?: number) =>
       dispatch({ type: 'SET_TASK_STATUS', payload: { taskId, status, delayDays } }),
     []
   );
   const addQuote = useCallback((quote: VendorQuote) => dispatch({ type: 'ADD_QUOTE', payload: quote }), []);
-  const toggleQuoteVerified = useCallback((quoteId: string) => dispatch({ type: 'TOGGLE_QUOTE_VERIFIED', payload: { quoteId } }), []);
-
+  const toggleQuoteVerified = useCallback(
+    (quoteId: string) => dispatch({ type: 'TOGGLE_QUOTE_VERIFIED', payload: { quoteId } }),
+    []
+  );
   const updateChecklistStatus = useCallback(
     (
       itemId: string,
       status: VendorChecklistStatus,
       options?: { readonly advancePaid?: number | undefined; readonly bookedPrice?: number | undefined }
-    ) => {
+    ) =>
       dispatch({
         type: 'UPDATE_CHECKLIST_STATUS',
-        payload: { itemId, status, advancePaid: options?.advancePaid, bookedPrice: options?.bookedPrice },
-      });
-    },
+        payload: {
+          itemId,
+          status,
+          ...(options?.advancePaid !== undefined && { advancePaid: options.advancePaid }),
+          ...(options?.bookedPrice !== undefined && { bookedPrice: options.bookedPrice }),
+        },
+      }),
     []
   );
-
   const setChecklist = useCallback(
     (checklist: readonly VendorChecklistItem[]) => dispatch({ type: 'SET_CHECKLIST', payload: checklist }),
     []
   );
-
   const updateSubEvent = useCallback(
     (
       subEventId: string,
@@ -118,7 +97,11 @@ export function usePlan(
         readonly guestCount?: number | undefined;
         readonly budgetSharePercent?: number | undefined;
       }
-    ) => dispatch({ type: 'UPDATE_SUB_EVENT', payload: { subEventId, updates } }),
+    ) =>
+      dispatch({
+        type: 'UPDATE_SUB_EVENT',
+        payload: { subEventId, updates },
+      }),
     []
   );
 

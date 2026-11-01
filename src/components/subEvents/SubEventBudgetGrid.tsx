@@ -7,12 +7,14 @@ import type { BudgetCategoryItem } from '../../types/planner';
 import type { SubEvent } from '../../domain/subEvents/types';
 import { formatINR } from '../../utils/uiHelpers';
 
+/** Props for SubEventBudgetGrid. */
 export interface SubEventBudgetGridProps {
   readonly subEvents: ReadonlyArray<SubEvent>;
   readonly items: ReadonlyArray<BudgetCategoryItem>;
   readonly totalBudget: number;
 }
 
+/** Function-by-category reconciliation budget matrix grid with cross-functional totals. */
 export const SubEventBudgetGrid: React.FC<SubEventBudgetGridProps> = ({
   subEvents,
   items,

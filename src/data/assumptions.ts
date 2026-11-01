@@ -2,6 +2,7 @@
  * @fileoverview Default financial, tax, and logistical assumptions for event calculations.
  */
 
+/** Configurable celebration financial assumptions and tax rates. */
 export interface EventAssumptions {
   readonly headcountBufferPercent: number;
   readonly peakSeasonMultiplier: number;
@@ -9,6 +10,7 @@ export interface EventAssumptions {
   readonly gstRateCatering: number;
 }
 
+/** Standard baseline assumptions for celebration planning in India. */
 export const DEFAULT_ASSUMPTIONS: EventAssumptions = {
   headcountBufferPercent: 10,
   peakSeasonMultiplier: 1.0,

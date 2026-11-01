@@ -6,6 +6,17 @@ import type { TimelineTask, TaskStatus } from '../../types/planner';
 import { type Result, okResult, errResult } from '../../types/result';
 import { getTopologicalOrder } from './graph';
 
+/**
+ * Propagates vendor delay downstream through the dependency graph.
+ * @param tasks Current list of timeline tasks.
+ * @param delayedTaskId ID of the task experiencing the delay.
+ * @param delayDays Number of days the task is delayed.
+ * @returns Updated array of timeline tasks with downstream shifts applied.
+ * @example
+ * ```ts
+ * const updated = propagateDelay(tasks, 'task-venue', 10);
+ * ```
+ */
 export function propagateDelay(
   tasks: ReadonlyArray<TimelineTask>,
   delayedTaskId: string,
@@ -60,6 +71,16 @@ function applyShiftToTask(task: TimelineTask, shift: number, ownDelay: number): 
   task.status = resolveTaskStatus(task.status, ownDelay);
 }
 
+/**
+ * Topologically sorts tasks and recalculates deadlines based on delay overrides.
+ * @param tasks Current list of timeline tasks.
+ * @param delayOverrides Optional map of task IDs to their specific delay days.
+ * @returns Ok result with recalculated tasks, or Err result if dependency cycle detected.
+ * @example
+ * ```ts
+ * const result = recalculateTimeline(tasks, new Map([['task-venue', 10]]));
+ * ```
+ */
 export function recalculateTimeline(
   tasks: ReadonlyArray<TimelineTask>,
   delayOverrides?: ReadonlyMap<string, number> | undefined
@@ -84,6 +105,12 @@ export function recalculateTimeline(
   return okResult(Array.from(taskMap.values()));
 }
 
+/**
+ * Compresses celebration timeline deadlines when overall event date moves forward.
+ * @param tasks Current list of timeline tasks.
+ * @param compressionDays Number of days by which to compress the schedule.
+ * @returns Updated array of compressed timeline tasks.
+ */
 export function compressTimeline(
   tasks: ReadonlyArray<TimelineTask>,
   compressionDays: number

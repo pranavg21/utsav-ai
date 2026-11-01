@@ -10,6 +10,7 @@ import { SubEventRow } from './SubEventRow';
 import { ConflictList } from './ConflictList';
 import { SubEventBudgetGrid } from './SubEventBudgetGrid';
 
+/** Props for SubEventsTab. */
 export interface SubEventsTabProps {
   readonly subEvents: ReadonlyArray<SubEvent>;
   readonly totalBudget: number;
@@ -29,6 +30,7 @@ const HEADER_CARD_CLASS =
   'flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 ' +
   'sm:flex-row sm:items-center sm:justify-between';
 
+/** Tab panel coordinating celebration sub-events, budget allocations, and venue transit conflict detection. */
 export const SubEventsTab: React.FC<SubEventsTabProps> = ({
   subEvents,
   totalBudget,

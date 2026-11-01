@@ -11,6 +11,7 @@ interface PriorityRankingListProps {
   readonly onUpdateRanking: (updated: BudgetCategoryName[]) => void;
 }
 
+/** Reorderable ranking list for budget category priorities. */
 export const PriorityRankingList: React.FC<PriorityRankingListProps> = React.memo(
   ({ priorityRanking, onUpdateRanking }) => {
     const movePriority = useCallback(

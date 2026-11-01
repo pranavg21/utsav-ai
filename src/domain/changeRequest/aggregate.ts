@@ -5,6 +5,7 @@
 import type { ChangeRequestInput } from '../../types/plannerExtended';
 import { type ChangeRequestIntent, parseAllChangeIntents } from './parse';
 
+/** Aggregated delta modifications extracted from a natural-language change request. */
 export interface AggregatedChange {
   readonly guestDelta: number;
   readonly budgetDeltaPercent: number;
@@ -47,6 +48,17 @@ function processSingleIntent(agg: MutableAgg, intent: ChangeRequestIntent): void
   }
 }
 
+/**
+ * Parses and aggregates multi-clause natural language change prompts into unified deltas.
+ * @param rawPrompt User natural language text describing event changes.
+ * @param totalBudget Baseline total budget used for converting currency deltas to percentages.
+ * @returns Combined delta adjustments across headcount, budget, timeline, and vendor delays.
+ * @example
+ * ```ts
+ * const change = aggregateChangePrompt('We have 50 more guests and budget dropped 10%', 800000);
+ * // change.guestDelta === 50, change.budgetDeltaPercent === -10
+ * ```
+ */
 export function aggregateChangePrompt(rawPrompt: string, totalBudget = 1000000): AggregatedChange {
   const parsed = parseAllChangeIntents(rawPrompt);
   const agg: MutableAgg = { guestDelta: 0, budgetDeltaPercent: 0, budgetCurrency: 0, timelineDeltaDays: 0 };
@@ -73,6 +85,12 @@ function hasDirectDeltas(payload: ChangeRequestInput): boolean {
   return payload.vendorDelay !== undefined;
 }
 
+/**
+ * Resolves change deltas either from explicit payload fields or by parsing rawPrompt.
+ * @param payload Change request input object containing raw prompt or direct deltas.
+ * @param totalBudget Baseline total budget used for converting currency deltas.
+ * @returns Unified aggregated change deltas.
+ */
 export function resolveChangeDeltas(payload: ChangeRequestInput, totalBudget: number): AggregatedChange {
   if (hasDirectDeltas(payload) || !payload.rawPrompt) {
     const { guestDelta = 0, budgetDeltaPercent = 0, timelineDeltaDays = 0, vendorDelay, costOverrunPercent = 0 } = payload;
