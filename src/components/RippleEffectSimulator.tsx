@@ -8,10 +8,8 @@ import { Zap, MessageSquare } from 'lucide-react';
 import type { EventContext, ChangeRequestInput } from '../types/planner';
 import { sanitizeUserText } from '../utils/security';
 import { CARD_CLASSES, BADGE_BASE, formatINR } from '../utils/uiHelpers';
-import { useGeminiAuth } from '../hooks/useGeminiAuth';
 import { ProvenanceBadge } from './ProvenanceBadge';
-import { formatChangeSummary } from '../domain/changeRequest/parse';
-import { aggregateChangePrompt } from '../domain/changeRequest/aggregate';
+import { useChangeRequestAi } from '../hooks/useChangeRequestAi';
 
 interface ShockPreset { readonly label: string; readonly input: ChangeRequestInput; }
 interface RippleProps { readonly context: EventContext; readonly onApplyChange: (input: ChangeRequestInput) => void; }
@@ -28,7 +26,7 @@ const PROMPT_INPUT_CLASS =
 export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [lastApplied, setLastApplied] = useState<LastAppliedState | null>(null);
-  const { isConnected } = useGeminiAuth();
+  const { isPending, lastProvenance, lastResponseJson, lastSummary, applyChangeAi } = useChangeRequestAi();
 
   const shocks: ShockPreset[] = [
     {
@@ -61,15 +59,13 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
     [onApplyChange]
   );
 
-  const handleCustomSubmit = useCallback((): void => {
-    if (!customPrompt.trim()) return;
+  const handleCustomSubmit = useCallback(async (): Promise<void> => {
+    if (!customPrompt.trim() || isPending) return;
     const sanitized = sanitizeUserText(customPrompt);
-    const parsed = aggregateChangePrompt(sanitized, context.totalBudget);
-    const summary = formatChangeSummary(parsed);
-    setLastApplied({ label: sanitized, summary: summary || undefined });
-    onApplyChange({ rawPrompt: sanitized });
     setCustomPrompt('');
-  }, [context.totalBudget, customPrompt, onApplyChange]);
+    setLastApplied({ label: sanitized });
+    await applyChangeAi(context, sanitized, onApplyChange);
+  }, [applyChangeAi, context, customPrompt, isPending, onApplyChange]);
 
   return (
     <section className={CARD_CLASSES} aria-label="Ripple effect simulator">
@@ -97,7 +93,7 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCustomSubmit();
+              if (e.key === 'Enter') void handleCustomSubmit();
             }}
             placeholder="Describe any change in natural language…"
             className={PROMPT_INPUT_CLASS}
@@ -105,11 +101,12 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
           />
         </div>
         <button
-          onClick={handleCustomSubmit}
-          className="rounded-lg bg-saffron-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-saffron-500"
+          onClick={() => { void handleCustomSubmit(); }}
+          disabled={isPending}
+          className="rounded-lg bg-saffron-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-saffron-500 disabled:opacity-50"
           aria-label="Apply custom change"
         >
-          Apply
+          {isPending ? 'Analyzing…' : 'Apply'}
         </button>
       </div>
       {lastApplied && (
@@ -122,17 +119,19 @@ export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyC
             <span className={`${BADGE_BASE} bg-amber-500/20 text-amber-400`}>
               Last Change Applied
             </span>
-            <ProvenanceBadge
-              provenance={
-                isConnected
-                  ? { source: 'gemini', model: 'gemini-3.8-flash' }
-                  : { source: 'deterministic', reason: 'no-api-key' }
-              }
-            />
+            {lastProvenance && <ProvenanceBadge provenance={lastProvenance} />}
           </div>
           <p className="text-sm font-medium text-slate-200">{lastApplied.label}</p>
-          {lastApplied.summary && (
-            <p className="mt-1 text-xs font-semibold text-emerald-400">{lastApplied.summary}</p>
+          {(lastSummary ?? lastApplied.summary) && (
+            <p className="mt-1 text-xs font-semibold text-emerald-400">
+              {lastSummary ?? lastApplied.summary}
+            </p>
+          )}
+          {lastResponseJson && (
+            <details className="mt-2 rounded border border-slate-800 bg-slate-950 p-2 text-xs text-slate-400">
+              <summary className="cursor-pointer font-medium text-slate-300">Gemini response</summary>
+              <pre className="mt-1 overflow-x-auto text-[11px] text-emerald-400">{lastResponseJson}</pre>
+            </details>
           )}
         </div>
       )}

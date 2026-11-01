@@ -33,10 +33,19 @@ export const AiPlanResponseSchema = z.object({
 
 export const AiChangeRequestResponseSchema = z.object({
   changeType: z.enum(['guest_count', 'budget_shift', 'timeline_delay', 'vendor_switch', 'scope_tradeoff']),
-  targetCategory: z.string().optional(),
-  amountDelta: z.number().optional(),
-  guestDelta: z.number().optional(),
-  targetDaysDelta: z.number().optional(),
+  targetCategory: z.string().optional().nullable(),
+  amountDelta: z.number().optional().nullable(),
+  budgetDeltaPercent: z.number().optional().nullable(),
+  guestDelta: z.number().optional().nullable(),
+  targetDaysDelta: z.number().optional().nullable(),
+  costOverrunPercent: z.number().optional().nullable(),
+  vendorDelay: z
+    .object({
+      taskId: z.string(),
+      days: z.number(),
+    })
+    .optional()
+    .nullable(),
   sentiment: z.number().min(-1).max(1),
   reasoning: z.string(),
 });
@@ -82,4 +91,3 @@ export type AiPlanResponse = z.infer<typeof AiPlanResponseSchema>;
 export type AiChangeRequestResponse = z.infer<typeof AiChangeRequestResponseSchema>;
 export type AiVendorChecklistResponse = z.infer<typeof AiVendorChecklistResponseSchema>;
 export type AiVendorQuoteExtraction = z.infer<typeof AiVendorQuoteExtractionSchema>;
-

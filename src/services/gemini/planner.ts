@@ -15,6 +15,7 @@ import { GEMINI_MODEL_ID, GEMINI_TEMPERATURES } from './config';
 import {
   AiChangeRequestResponseSchema,
   AiPersonalizedIdeasResponseSchema,
+  type AiChangeRequestResponse,
 } from './schemas';
 import type { AiResult } from './types';
 import {
@@ -25,6 +26,46 @@ import {
 
 export { getActiveApiKey, getGeminiStatus, setRuntimeApiKey };
 export type { ParsedChangeResult };
+
+function computeBudgetPct(rawAmt: number | undefined | null, totalBudget: number, fallbackPct: number): number {
+  if (rawAmt === undefined || rawAmt === null) return fallbackPct;
+  return Math.round((rawAmt / totalBudget) * 100);
+}
+
+function buildOptionalFields(
+  costOverrun?: number,
+  currency?: number,
+  vendorDelay?: { readonly taskId: string; readonly days: number },
+  unrecognized?: readonly string[]
+) {
+  return {
+    ...(costOverrun !== undefined ? { costOverrunPercent: costOverrun } : {}),
+    ...(currency !== undefined ? { budgetDeltaCurrency: currency } : {}),
+    ...(vendorDelay !== undefined ? { vendorDelay } : {}),
+    ...(unrecognized ? { unrecognizedFragments: unrecognized } : {}),
+  };
+}
+
+function resolveAiChangeData(
+  resultData: AiChangeRequestResponse,
+  fallback: ParsedChangeResult,
+  totalBudget: number
+): ParsedChangeResult {
+  const computedPct = computeBudgetPct(resultData.amountDelta, totalBudget, fallback.budgetDeltaPercent);
+  const budgetDeltaPercent = resultData.budgetDeltaPercent ?? computedPct;
+  const costOverrunPercent = resultData.costOverrunPercent ?? fallback.costOverrunPercent;
+  const vendorDelay = resultData.vendorDelay ?? fallback.vendorDelay;
+  const extra = buildOptionalFields(costOverrunPercent, fallback.budgetDeltaCurrency, vendorDelay, fallback.unrecognizedFragments);
+
+  return {
+    guestDelta: resultData.guestDelta ?? fallback.guestDelta,
+    budgetDeltaPercent,
+    timelineDeltaDays: resultData.targetDaysDelta ?? fallback.timelineDeltaDays,
+    impactSummary: resultData.reasoning || fallback.impactSummary,
+    recommendedActions: fallback.recommendedActions,
+    ...extra,
+  };
+}
 
 export async function parseChangeRequestWithAi(
   context: EventContext,
@@ -44,18 +85,7 @@ export async function parseChangeRequestWithAi(
 
   let output: AiResult<ParsedChangeResult>;
   if (result.success) {
-    const data: ParsedChangeResult = {
-      guestDelta: result.data.guestDelta ?? fallback.guestDelta,
-      budgetDeltaPercent: result.data.amountDelta !== undefined
-        ? Math.round((result.data.amountDelta / context.totalBudget) * 100)
-        : fallback.budgetDeltaPercent,
-      timelineDeltaDays: result.data.targetDaysDelta ?? fallback.timelineDeltaDays,
-      ...(fallback.budgetDeltaCurrency !== undefined && { budgetDeltaCurrency: fallback.budgetDeltaCurrency }),
-      ...(fallback.vendorDelay !== undefined && { vendorDelay: fallback.vendorDelay }),
-      impactSummary: result.data.reasoning || fallback.impactSummary,
-      recommendedActions: fallback.recommendedActions,
-      ...(fallback.unrecognizedFragments !== undefined && { unrecognizedFragments: fallback.unrecognizedFragments }),
-    };
+    const data = resolveAiChangeData(result.data, fallback, context.totalBudget);
     output = { data, provenance: { source: 'gemini', model: result.model } };
     setCachedResponse(cacheKey, output);
   } else {
@@ -63,6 +93,14 @@ export async function parseChangeRequestWithAi(
   }
 
   return output;
+}
+
+export async function parseChangeRequest(
+  context: EventContext,
+  input: ChangeRequestInput
+): Promise<ParsedChangeResult> {
+  const result = await parseChangeRequestWithAi(context, input);
+  return result.data;
 }
 
 export async function generateThemesWithAi(
@@ -103,17 +141,7 @@ export async function generateThemesWithAi(
   return output;
 }
 
-export async function parseChangeRequest(
-  context: EventContext,
-  input: ChangeRequestInput
-): Promise<ParsedChangeResult> {
-  const result = await parseChangeRequestWithAi(context, input);
-  return result.data;
-}
-
-export async function generateThemes(
-  context: EventContext
-): Promise<PersonalizedConcept[]> {
+export async function generateThemes(context: EventContext): Promise<PersonalizedConcept[]> {
   const result = await generateThemesWithAi(context);
   return result.data;
 }
