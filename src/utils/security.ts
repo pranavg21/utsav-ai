@@ -1,13 +1,7 @@
 /**
  * @fileoverview Security utilities for input sanitization, numeric validation, and client-side rate limiting.
- * Protects against XSS injection, invalid numeric ranges, and excessive API call rates.
+ * Protects against control characters, bidi injection, invalid numeric ranges, and rate abuse.
  */
-
-/** Regex pattern to match HTML script tags and their contents. */
-const SCRIPT_TAG_PATTERN = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-
-/** Regex pattern to match all HTML tags. */
-const HTML_TAG_PATTERN = /<[^>]*>/g;
 
 /** Regex pattern to match ASCII control characters (except newline and tab). */
 const CONTROL_CHAR_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
@@ -28,20 +22,28 @@ const SLIDING_WINDOW_MS = 60_000;
 const rateLimitStore = new Map<string, number[]>();
 
 /**
- * Strips script tags, HTML tags, control chars, bidi overrides, and zero-width chars with NFKC normalization.
+ * Sanitizes user input via NFKC normalization and strips control chars and bidi overrides.
+ * Does NOT trim during typing to allow natural space entry.
  *
  * @param input - Raw user-provided text string.
  * @param maxLength - Maximum allowed string length (defaults to 2000).
- * @returns Sanitized plain-text string safe for processing.
+ * @returns Sanitized string safe for in-memory and UI handling.
  */
 export function sanitizeUserText(input: string, maxLength: number = DEFAULT_MAX_LENGTH): string {
   const normalized = input.normalize('NFKC').slice(0, maxLength);
   return normalized
-    .replace(SCRIPT_TAG_PATTERN, '')
-    .replace(HTML_TAG_PATTERN, '')
     .replace(CONTROL_CHAR_PATTERN, '')
-    .replace(BIDI_AND_ZERO_WIDTH_PATTERN, '')
-    .trim();
+    .replace(BIDI_AND_ZERO_WIDTH_PATTERN, '');
+}
+
+/**
+ * Finalizes text on blur or submit by trimming extraneous leading/trailing whitespace.
+ *
+ * @param input - Sanitized text string.
+ * @returns Trimmed string.
+ */
+export function finalizeText(input: string): string {
+  return input.trim();
 }
 
 /**
@@ -60,37 +62,35 @@ export function validateNumericBound(val: number, min: number, max: number): num
 }
 
 /**
- * Client-side sliding-window rate limiter. Returns true if the action is within
- * the allowed call threshold, false if rate limit is exceeded.
+ * Evaluates whether an action call exceeds the sliding-window rate limit.
  *
- * @param actionKey - Unique identifier for the rate-limited action.
- * @param maxCallsPerMinute - Maximum calls allowed within one sliding minute window.
- * @returns True if the call is permitted, false if rate-limited.
+ * @param action - Unique identifier for the rate-limited action.
+ * @param maxPerMinute - Maximum allowed calls within the sliding window (default 10).
+ * @returns True if the call is allowed; false if rate limit is exceeded.
  */
 export function checkRateLimit(
-  actionKey: string,
-  maxCallsPerMinute: number = DEFAULT_MAX_CALLS_PER_MINUTE
+  action: string,
+  maxPerMinute: number = DEFAULT_MAX_CALLS_PER_MINUTE
 ): boolean {
   const now = Date.now();
-  const windowStart = now - SLIDING_WINDOW_MS;
-  const existing = rateLimitStore.get(actionKey) ?? [];
-  const filtered = existing.filter((ts) => ts > windowStart);
+  const timestamps = rateLimitStore.get(action) ?? [];
+  const validTimestamps = timestamps.filter((t) => now - t < SLIDING_WINDOW_MS);
 
-  if (filtered.length >= maxCallsPerMinute) {
-    rateLimitStore.set(actionKey, filtered);
+  if (validTimestamps.length >= maxPerMinute) {
+    rateLimitStore.set(action, validTimestamps);
     return false;
   }
 
-  filtered.push(now);
-  rateLimitStore.set(actionKey, filtered);
+  validTimestamps.push(now);
+  rateLimitStore.set(action, validTimestamps);
   return true;
 }
 
 /**
- * Resets the rate limiter store for a given action key. Useful for testing.
+ * Resets rate limit store for a given action key. Used exclusively for testing.
  *
- * @param actionKey - The action key to reset.
+ * @param action - Action key to reset.
  */
-export function resetRateLimit(actionKey: string): void {
-  rateLimitStore.delete(actionKey);
+export function resetRateLimit(action: string): void {
+  rateLimitStore.delete(action);
 }

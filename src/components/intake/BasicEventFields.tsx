@@ -5,7 +5,7 @@
 import React from 'react';
 import type { EventContext } from '../../types/planner';
 import { isOccasionType, isExperienceTier } from '../../utils/typeGuards';
-import { sanitizeUserText } from '../../utils/security';
+import { sanitizeUserText, finalizeText } from '../../utils/security';
 import { NumericInputField } from './NumericInputField';
 
 interface BasicEventFieldsProps {
@@ -44,6 +44,7 @@ export const BasicEventFields: React.FC<BasicEventFieldsProps> = React.memo(({ c
           id="eventName"
           value={context.eventName}
           onChange={(e) => onUpdateField('eventName', sanitizeUserText(e.target.value, 100))}
+          onBlur={(e) => onUpdateField('eventName', finalizeText(e.target.value))}
           className={inputCls}
           aria-label="Event name"
         />

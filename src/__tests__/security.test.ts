@@ -5,45 +5,44 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   sanitizeUserText,
+  finalizeText,
   validateNumericBound,
   checkRateLimit,
   resetRateLimit,
 } from '../utils/security';
 
-describe('security - sanitizeUserText', () => {
-  it('should strip script tags from input', () => {
-    const input = 'Hello <script>alert("xss")</script> World';
-    const result = sanitizeUserText(input);
-    expect(result).not.toContain('<script>');
-    expect(result).not.toContain('</script>');
-    expect(result).toContain('Hello');
-    expect(result).toContain('World');
+describe('security - sanitizeUserText & finalizeText (9.7)', () => {
+  it('preserves trailing spaces during typing (e.g. "Grand ")', () => {
+    expect(sanitizeUserText('Grand ')).toBe('Grand ');
   });
 
-  it('should strip all HTML tags', () => {
-    const input = '<b>Bold</b> and <a href="evil.com">Link</a>';
-    const result = sanitizeUserText(input);
-    expect(result).not.toContain('<b>');
-    expect(result).not.toContain('<a');
-    expect(result).toContain('Bold');
-    expect(result).toContain('Link');
+  it('does not destroy text with comparison operators "budget < 5L and > 3L"', () => {
+    expect(sanitizeUserText('budget < 5L and > 3L')).toBe('budget < 5L and > 3L');
   });
 
-  it('should strip control characters', () => {
+  it('preserves raw text for React escaping without regex mangling', () => {
+    const input = '<img src=x onerror=alert(1)//';
+    expect(sanitizeUserText(input)).toBe(input);
+  });
+
+  it('strips ASCII control characters', () => {
     const input = 'Hello\x00\x01\x02World';
-    const result = sanitizeUserText(input);
-    expect(result).toBe('HelloWorld');
+    expect(sanitizeUserText(input)).toBe('HelloWorld');
   });
 
-  it('should truncate input to maxLength', () => {
+  it('strips zero-width and bidi override characters', () => {
+    const input = 'Hello\u200B\u202AWorld';
+    expect(sanitizeUserText(input)).toBe('HelloWorld');
+  });
+
+  it('truncates input to maxLength', () => {
     const input = 'A'.repeat(3000);
     const result = sanitizeUserText(input, 100);
     expect(result.length).toBeLessThanOrEqual(100);
   });
 
-  it('should trim whitespace from result', () => {
-    const result = sanitizeUserText('  hello world  ');
-    expect(result).toBe('hello world');
+  it('finalizeText trims whitespace on blur / submit', () => {
+    expect(finalizeText('  Grand Family Wedding  ')).toBe('Grand Family Wedding');
   });
 });
 
