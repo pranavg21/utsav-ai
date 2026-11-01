@@ -17,7 +17,8 @@ if (!apiKey) {
 }
 
 const ai = new GoogleGenAI({ apiKey });
-const MODEL_ID = 'gemini-3.8-flash';
+const MODEL_ID = process.env.GEMINI_MODEL_ID ?? 'gemini-3.8-flash';
+const FALLBACK_MODEL_ID = 'gemini-2.5-flash';
 const SYSTEM_INSTRUCTION =
   'You are UtsavAI, an expert celebration and event planning intelligence specializing in Indian weddings, birthdays, and community gatherings. Never invent vendor names, availability, or confirmed prices. Label every monetary figure as an estimate.';
 
@@ -25,21 +26,40 @@ async function testCapability(name, prompt, schema) {
   console.log(`\nTesting capability: [${name}]...`);
   try {
     const jsonSchema = z.toJSONSchema(schema);
-    const response = await ai.models.generateContent({
-      model: MODEL_ID,
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.1,
-        responseMimeType: 'application/json',
-        responseJsonSchema: jsonSchema,
-      },
-    });
+    const reqConfig = {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+      responseJsonSchema: jsonSchema,
+    };
+
+    let usedModel = MODEL_ID;
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: usedModel,
+        contents: prompt,
+        config: reqConfig,
+      });
+    } catch (modelErr) {
+      const msg = modelErr.message ?? String(modelErr);
+      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('404')) {
+        usedModel = FALLBACK_MODEL_ID;
+        console.log(`  ℹ Model ${MODEL_ID} unavailable (${msg.slice(0, 45)}...), failing over to ${usedModel}`);
+        response = await ai.models.generateContent({
+          model: usedModel,
+          contents: prompt,
+          config: reqConfig,
+        });
+      } else {
+        throw modelErr;
+      }
+    }
 
     const text = response.text ?? '';
     const parsed = schema.safeParse(JSON.parse(text));
     if (parsed.success) {
-      console.log(`  ✓ SUCCESS: source=gemini, model=${MODEL_ID}`);
+      console.log(`  ✓ SUCCESS: source=gemini, model=${usedModel}`);
       return true;
     } else {
       console.error(`  ✗ SCHEMA VALIDATION ERROR:`, parsed.error.issues);

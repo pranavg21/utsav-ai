@@ -68,17 +68,35 @@ export async function executeStructuredGeminiCall<T>(
     const ai = new GoogleGenAI({ apiKey });
 
     const jsonSchema = z.toJSONSchema(schema);
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL_ID,
-      contents: prompt,
-      config: {
-        systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
-        temperature,
-        responseMimeType: 'application/json',
-        responseJsonSchema: jsonSchema,
-        abortSignal: controller.signal,
-      },
-    });
+    const reqConfig = {
+      systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
+      temperature,
+      responseMimeType: 'application/json',
+      responseJsonSchema: jsonSchema,
+      abortSignal: controller.signal,
+    };
+
+    let usedModel = GEMINI_MODEL_ID;
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: usedModel,
+        contents: prompt,
+        config: reqConfig,
+      });
+    } catch (modelErr: unknown) {
+      const errMsg = extractErrorMessage(modelErr);
+      if (errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('404')) {
+        usedModel = 'gemini-2.5-flash';
+        response = await ai.models.generateContent({
+          model: usedModel,
+          contents: prompt,
+          config: reqConfig,
+        });
+      } else {
+        throw modelErr;
+      }
+    }
 
     clearTimeout(timer);
     const text = response.text ?? '';
@@ -91,7 +109,7 @@ export async function executeStructuredGeminiCall<T>(
     }
 
     isGeminiConnected = true;
-    return { success: true, data: parsed.data, model: GEMINI_MODEL_ID };
+    return { success: true, data: parsed.data, model: usedModel };
   } catch (err: unknown) {
     clearTimeout(timer);
     const msg = extractErrorMessage(err);
