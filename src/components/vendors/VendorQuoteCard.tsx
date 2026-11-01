@@ -7,6 +7,7 @@ import { Shield, CheckCircle2, DollarSign, Users, AlertTriangle, MessageCircle }
 import type { EventContext, VendorQuote } from '../../types/planner';
 import { compareQuoteToContext, calculateAllInCost } from '../../domain/vendors/normalize';
 import { BADGE_BASE, CARD_CLASSES, formatINR } from '../../utils/uiHelpers';
+import { ProvenanceBadge } from '../ProvenanceBadge';
 
 interface VendorQuoteCardProps {
   readonly quote: VendorQuote;
@@ -47,6 +48,11 @@ export const VendorQuoteCard: React.FC<VendorQuoteCardProps> = React.memo(
           </button>
         </div>
         <p className="mb-2 text-xs text-slate-400">{quote.category}</p>
+        {quote.provenance && (
+          <div className="mb-2">
+            <ProvenanceBadge provenance={quote.provenance} />
+          </div>
+        )}
         <div className="mb-3 space-y-1 text-xs">
           <div className="flex justify-between">
             <span className="text-slate-400">Headline Quote:</span>

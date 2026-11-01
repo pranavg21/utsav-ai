@@ -3,6 +3,7 @@
  */
 
 import type { BudgetCategoryName, VendorQuote } from '../../types/planner';
+import type { ProvenanceBadgeData } from '../../types/plannerExtended';
 import { calculateAllInCost } from './normalize';
 
 function resolveUnitMultiplier(unit: string): number {
@@ -69,7 +70,8 @@ function extractGuestCapacity(text: string, defaultGuests: number): number {
 export function analyzeRawQuoteText(
   rawText: string,
   category: BudgetCategoryName,
-  defaultGuests = 100
+  defaultGuests = 100,
+  provenance?: ProvenanceBadgeData
 ): VendorQuote {
   const extractedPrice = extractPriceFromText(rawText);
   const guestCapacity = extractGuestCapacity(rawText, defaultGuests);
@@ -107,6 +109,7 @@ export function analyzeRawQuoteText(
   return {
     ...baseQuote,
     allInCost: allIn.allInCost,
+    ...(provenance ? { provenance } : {}),
   };
 }
 

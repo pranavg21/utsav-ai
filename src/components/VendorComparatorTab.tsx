@@ -5,8 +5,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { BudgetCategoryName, EventContext, VendorQuote } from '../types/planner';
 import { CARD_CLASSES } from '../utils/uiHelpers';
-import { analyzeRawQuoteText } from '../domain/vendors/normalize';
-import { sanitizeUserText } from '../utils/security';
+import { useVendorQuoteAi } from '../hooks/useVendorQuoteAi';
 import { isBudgetCategoryName } from '../utils/typeGuards';
 import { VendorQuoteCard } from './vendors/VendorQuoteCard';
 
@@ -35,21 +34,22 @@ const TEXTAREA_CLASS =
   'mb-2 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm ' +
   'text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none';
 
+const BUTTON_CLASS =
+  'rounded-lg bg-saffron-600 px-4 py-2 text-xs font-medium text-white ' +
+  'transition hover:bg-saffron-500 disabled:opacity-50';
+
 const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
   ({ quotes, context, categoryBudgets, onToggleVerified, onAddQuote }) => {
     const [rawText, setRawText] = useState('');
     const [parseCategory, setParseCategory] = useState<BudgetCategoryName>('Venue & Logistics');
+    const { isAnalyzing, analyzeQuote } = useVendorQuoteAi();
 
-    const handleParse = useCallback((): void => {
-      if (!rawText.trim()) return;
-      const parsed = analyzeRawQuoteText(
-        sanitizeUserText(rawText, 5000),
-        parseCategory,
-        context.guestCount
-      );
-      onAddQuote(parsed);
-      setRawText('');
-    }, [rawText, parseCategory, context.guestCount, onAddQuote]);
+    const handleParse = useCallback(async (): Promise<void> => {
+      await analyzeQuote(rawText, parseCategory, context.guestCount, (quote) => {
+        onAddQuote(quote);
+        setRawText('');
+      });
+    }, [analyzeQuote, rawText, parseCategory, context.guestCount, onAddQuote]);
 
     const renderedQuotes = useMemo(() => quotes, [quotes]);
 
@@ -96,11 +96,12 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
           />
           <button
             type="button"
+            disabled={isAnalyzing}
             onClick={handleParse}
-            className="rounded-lg bg-saffron-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-saffron-500"
+            className={BUTTON_CLASS}
             aria-label="Analyze pasted quote"
           >
-            Analyze Quote
+            {isAnalyzing ? 'Analyzing…' : 'Analyze Quote'}
           </button>
         </div>
       </section>

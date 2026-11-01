@@ -65,6 +65,8 @@ export interface VendorQuote {
   readonly perUnitPrice?: number | undefined;
   /** Normalized all-in cost including GST and buffers. */
   readonly allInCost?: number | undefined;
+  /** AI vs deterministic generation provenance badge metadata. */
+  readonly provenance?: ProvenanceBadgeData | undefined;
 }
 
 /**

@@ -5,6 +5,11 @@
 import type { BudgetCategoryName, EventContext, VendorQuote } from '../../types/planner';
 
 export { analyzeRawQuoteText } from './parseQuoteText';
+export {
+  normalizeExtractedQuote,
+  type RawExtractedQuoteData,
+  type NormalizeQuoteOptions,
+} from './normalizeExtracted';
 
 export interface QuoteComparisonResult {
   readonly quoteId: string;
