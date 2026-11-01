@@ -75,7 +75,7 @@ export async function executeStructuredGeminiCall<T>(
         systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
         temperature,
         responseMimeType: 'application/json',
-        responseSchema: jsonSchema,
+        responseJsonSchema: jsonSchema,
         abortSignal: controller.signal,
       },
     });

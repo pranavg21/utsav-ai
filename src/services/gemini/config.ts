@@ -3,8 +3,8 @@
  * system instructions, temperature profiles, and timeouts.
  */
 
-/** Active Gemini model ID verified in Google AI Studio. */
-export const GEMINI_MODEL_ID = 'gemini-2.5-flash';
+/** Active Gemini model ID for celebration planning. */
+export const GEMINI_MODEL_ID = 'gemini-3.8-flash';
 
 /** Strict system instruction enforcing planner role and hallucination prevention. */
 export const GEMINI_SYSTEM_INSTRUCTION =

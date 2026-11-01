@@ -47,7 +47,7 @@ describe('Gemini 2.5 Flash Structured Call Engine (Mocked)', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.changeType).toBe('budget_shift');
-      expect(result.model).toBe('gemini-2.5-flash');
+      expect(result.model).toBe('gemini-3.8-flash');
     }
   });
 
@@ -95,6 +95,32 @@ describe('Gemini 2.5 Flash Structured Call Engine (Mocked)', () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.reason).toBe('timeout');
+    }
+  });
+
+  it('passes responseJsonSchema and does not pass responseSchema in request config', async () => {
+    const { GoogleGenAI } = await import('@google/genai');
+    let capturedConfig: Record<string, unknown> | null = null;
+    const mockGenerate = vi.fn().mockImplementation((args: { config: Record<string, unknown> }) => {
+      capturedConfig = args.config;
+      return Promise.resolve({
+        text: JSON.stringify({
+          changeType: 'budget_shift',
+          amountDelta: 1000,
+          sentiment: 0,
+          reasoning: 'test',
+        }),
+      });
+    });
+    vi.mocked(GoogleGenAI).mockImplementation(() => ({
+      models: { generateContent: mockGenerate },
+    }) as unknown as InstanceType<typeof GoogleGenAI>);
+
+    await executeStructuredGeminiCall('prompt', AiChangeRequestResponseSchema, 0.1);
+    expect(capturedConfig).not.toBeNull();
+    if (capturedConfig !== null) {
+      expect('responseJsonSchema' in capturedConfig).toBe(true);
+      expect('responseSchema' in capturedConfig).toBe(false);
     }
   });
 });
