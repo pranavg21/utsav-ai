@@ -1,8 +1,9 @@
 /**
  * @fileoverview Custom hook for fetching and managing personalized theme ideas with GenAI provenance.
+ * Features 600ms debounce and stale response discard (10.8).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { EventContext, PersonalizedConcept } from '../types/planner';
 import type { ProvenanceBadgeData } from '../types/plannerExtended';
 import { generateThemesWithAi } from '../services/gemini/planner';
@@ -21,31 +22,47 @@ export function useThemes(context: EventContext): UseThemesReturn {
   const [provenance, setProvenance] = useState<ProvenanceBadgeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const requestIdRef = useRef(0);
 
-  const loadThemes = useCallback(async () => {
+  const fetchThemes = useCallback(async (currentRequestId: number, ctx: EventContext) => {
     setLoading(true);
     setError('');
     try {
-      const result = await generateThemesWithAi(context);
-      setThemes(result.data);
-      setProvenance(result.provenance);
+      const result = await generateThemesWithAi(ctx);
+      if (requestIdRef.current === currentRequestId) {
+        setThemes(result.data);
+        setProvenance(result.provenance);
+      }
     } catch (err: unknown) {
-      setError(extractErrorMessage(err));
+      if (requestIdRef.current === currentRequestId) {
+        setError(extractErrorMessage(err));
+      }
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === currentRequestId) {
+        setLoading(false);
+      }
     }
-  }, [context]);
+  }, []);
+
+  const refreshThemes = useCallback(() => {
+    requestIdRef.current += 1;
+    void fetchThemes(requestIdRef.current, context);
+  }, [fetchThemes, context]);
 
   useEffect(() => {
-    void loadThemes();
-  }, [loadThemes]);
+    requestIdRef.current += 1;
+    const currentRequestId = requestIdRef.current;
+    const timer = setTimeout(() => {
+      void fetchThemes(currentRequestId, context);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [fetchThemes, context]);
 
   return {
     themes,
     provenance,
     loading,
     error,
-    refreshThemes: loadThemes,
+    refreshThemes,
   };
 }
-
