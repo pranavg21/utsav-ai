@@ -8,6 +8,7 @@ import type {
   EventContext,
   TradeOffScenario,
 } from '../../types/planner';
+import { AGGRESSIVE_MAX_CUT_RATIO, DEFAULT_MAX_CUT_RATIO } from '../shared/constants';
 import type { TradeoffOptions, DistributeParams } from './types';
 import { isProtectedByMustHaves } from './allocation';
 
@@ -45,7 +46,7 @@ function distributeCuts(params: DistributeParams): {
 }
 
 export function buildWaterFillingScenario(options: TradeoffOptions): TradeOffScenario {
-  const { id, title, description, whatYouLose, items, overrunAmount, getWeight, maxCutRatio = 0.45 } = options;
+  const { id, title, description, whatYouLose, items, overrunAmount, getWeight, maxCutRatio = DEFAULT_MAX_CUT_RATIO } = options;
   const caps = new Map<string, number>();
   const weights = new Map<string, number>();
   const cuts = new Map<string, number>();
@@ -124,7 +125,7 @@ function generateScenarios(context: EventContext, items: ReadonlyArray<BudgetCat
         isProtectedByMustHaves(item.category, context.mustHaves)
           ? 0
           : 7 - item.priorityWeight,
-      maxCutRatio: 0.55,
+      maxCutRatio: AGGRESSIVE_MAX_CUT_RATIO,
     }),
     buildWaterFillingScenario({
       id: 'scenario-hospitality-first',
@@ -138,7 +139,7 @@ function generateScenarios(context: EventContext, items: ReadonlyArray<BudgetCat
         if (item.category === 'Decor & Ambience' || item.category === 'Venue & Logistics') return 4;
         return 1.5;
       },
-      maxCutRatio: 0.55,
+      maxCutRatio: AGGRESSIVE_MAX_CUT_RATIO,
     }),
   ].filter((s) => s.totalSavings > 0);
 }

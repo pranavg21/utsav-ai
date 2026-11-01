@@ -4,6 +4,7 @@
 
 import type { BudgetCategoryName, VendorQuote } from '../../types/planner';
 import type { ProvenanceBadgeData } from '../../types/plannerExtended';
+import { DEFAULT_GUEST_COUNT } from '../shared/constants';
 import { parseIndianAmountMultiplier } from '../shared/indianNumbers';
 import { calculateAllInCost } from './normalize';
 
@@ -58,7 +59,7 @@ function extractGuestCapacity(text: string, defaultGuests: number): number {
 export function analyzeRawQuoteText(
   rawText: string,
   category: BudgetCategoryName,
-  defaultGuests = 100,
+  defaultGuests = DEFAULT_GUEST_COUNT,
   provenance?: ProvenanceBadgeData
 ): VendorQuote {
   const extractedPrice = extractPriceFromText(rawText);

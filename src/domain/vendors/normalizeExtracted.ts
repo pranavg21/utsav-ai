@@ -24,12 +24,15 @@ export interface NormalizeQuoteOptions {
   readonly provenance: ProvenanceBadgeData;
 }
 
+/** Upper ceiling below which an extracted unit quote is interpreted as per-person rate. */
+const PER_UNIT_RATE_CEILING = 15000;
+
 function resolveExtractedPricing(
   quotedPrice: number,
   isPerUnit: boolean,
   guestCapacity: number
 ): { readonly price: number; readonly perUnit?: number | undefined } {
-  const isSmallUnit = quotedPrice > 0 && quotedPrice < 15000;
+  const isSmallUnit = quotedPrice > 0 && quotedPrice < PER_UNIT_RATE_CEILING;
   if (isPerUnit) {
     if (isSmallUnit) {
       return { price: quotedPrice * guestCapacity, perUnit: quotedPrice };

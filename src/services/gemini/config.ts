@@ -3,6 +3,10 @@
  * system instructions, temperature profiles, and timeouts.
  */
 
+import { GEMINI_TIMEOUT_MS } from '../../domain/shared/constants';
+
+export { GEMINI_TIMEOUT_MS };
+
 /** Active Gemini model ID for celebration planning. */
 export const GEMINI_MODEL_ID = 'gemini-3.8-flash';
 
@@ -23,6 +27,3 @@ export const GEMINI_TEMPERATURES = {
   checklist: 0.2,
   ideas: 0.4,
 } as const;
-
-/** Hard client-side timeout in milliseconds (15 seconds). */
-export const GEMINI_TIMEOUT_MS = 15000;

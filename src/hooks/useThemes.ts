@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { EventContext, PersonalizedConcept } from '../types/planner';
 import type { ProvenanceBadgeData } from '../types/plannerExtended';
+import { THEME_GENERATION_DEBOUNCE_MS } from '../domain/shared/constants';
 import { generateThemesWithAi } from '../services/gemini/planner';
 import { extractErrorMessage } from '../utils/uiHelpers';
 
@@ -54,7 +55,7 @@ export function useThemes(context: EventContext): UseThemesReturn {
     const currentRequestId = requestIdRef.current;
     const timer = setTimeout(() => {
       void fetchThemes(currentRequestId, context);
-    }, 600);
+    }, THEME_GENERATION_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [fetchThemes, context]);
 

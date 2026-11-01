@@ -3,6 +3,7 @@
  */
 
 import type { BudgetCategoryName, OccasionType } from '../../types/planner';
+import { SHARE_SUM_TOLERANCE, TARGET_TOTAL_SHARE } from '../shared/constants';
 
 export const WEDDING_CATEGORY_SHARES: Record<BudgetCategoryName, number> = {
   'Venue & Logistics': 0.26,
@@ -44,3 +45,12 @@ export function getCategorySharesForOccasion(occasion: OccasionType): Record<Bud
   }
 }
 
+/**
+ * Validates that category shares sum up to 100% within numeric tolerance.
+ * @param shares Category share mapping.
+ * @returns True if sum equals 1.0 within tolerance.
+ */
+export function isShareSumNormalized(shares: Record<BudgetCategoryName, number>): boolean {
+  const sum = Object.values(shares).reduce((acc, v) => acc + v, 0);
+  return Math.abs(sum - TARGET_TOTAL_SHARE) <= SHARE_SUM_TOLERANCE;
+}

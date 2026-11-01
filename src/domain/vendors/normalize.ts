@@ -3,6 +3,12 @@
  */
 
 import type { BudgetCategoryName, EventContext, VendorQuote } from '../../types/planner';
+import {
+  DEFAULT_HEADCOUNT_BUFFER,
+  GST_RATE_CATERING,
+  GST_RATE_GENERAL,
+  PER_UNIT_PRICE_THRESHOLD,
+} from '../shared/constants';
 
 export { analyzeRawQuoteText } from './parseQuoteText';
 export {
@@ -34,14 +40,14 @@ function resolveGstRate(category: BudgetCategoryName, optRate?: number): number 
   if (optRate !== undefined) {
     return optRate;
   }
-  return category === 'Catering & Hospitality' ? 0.05 : 0.18;
+  return category === 'Catering & Hospitality' ? GST_RATE_CATERING : GST_RATE_GENERAL;
 }
 
 function isPerPlateQuote(quote: VendorQuote): boolean {
   if (quote.perUnitPrice !== undefined && quote.perUnitPrice > 0) {
     return true;
   }
-  return quote.quotedPrice > 0 && quote.quotedPrice < 5000;
+  return quote.quotedPrice > 0 && quote.quotedPrice < PER_UNIT_PRICE_THRESHOLD;
 }
 
 export function calculateAllInCost(
@@ -49,7 +55,7 @@ export function calculateAllInCost(
   guestCount: number,
   options?: { readonly headcountBuffer?: number; readonly gstRate?: number }
 ): AllInCostBreakdown {
-  const buffer = options?.headcountBuffer ?? 0.15;
+  const buffer = options?.headcountBuffer ?? DEFAULT_HEADCOUNT_BUFFER;
   const gstRate = resolveGstRate(quote.category, options?.gstRate);
   const isPerPlate = isPerPlateQuote(quote);
   const effectiveGuests = isPerPlate ? Math.round(guestCount * (1 + buffer)) : 1;
