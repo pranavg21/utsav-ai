@@ -131,7 +131,7 @@ flowchart TD
 ---
 
 ## 7. Performance & Efficiency Profile
-- **Gzipped Entry JS:** ≈ 92.16 kB (strict ceiling: < 130 kB; Google GenAI is lazily imported at 56.92 kB).
+- **Gzipped Entry JS:** ≈ 97.13 kB (strict ceiling: < 130 kB; Google GenAI is lazily imported at 56.91 kB).
 - **Code-Splitting:** All 6 dashboard tabs (Budget Matrix, DAG Timeline, Vendor Checklist, Vendor Quotes, Theme Ideas, Sub-Events) are dynamically loaded via `React.lazy` and wrapped in accessible `<TabSkeleton role="status" aria-busy="true">`.
 - **Self-Hosted Assets:** Fully self-hosted `@fontsource/inter`; zero external Google Fonts CDN dependencies.
 - **PWA Service Worker:** Network-first for navigation requests; cache-first for `/assets/*` chunks ([`public/sw.js`](public/sw.js)).
@@ -175,7 +175,7 @@ npm run dev
 - [x] **Vendor Checklists:** First-class interactive tab linking due dates to DAG timeline tasks and synchronizing booked prices to budget projections.
 - [x] **Zero Placeholder UI:** Complete live interactive state transitions across diagnostic intake, budget matrix, DAG timeline, vendor quotes, vendor checklists, and crisis simulator.
 - [x] **Complete Test Breadth:** 57 test suites, 257 unit and integration tests passing, property-based verification via `fast-check`, and WCAG 2.1 AA audits via `vitest-axe` (0 violations).
-- [x] **Coverage Thresholds Met:** 98.14% Statements, 85.49% Branches, 94.08% Functions, 98.14% Lines (exceeding 90/85/90/90).
-- [x] **Production Bundle Budget:** Entry chunk 92.16 kB gzipped (strict budget: < 130 kB).
+- [x] **Coverage Thresholds Met:** 96.99% Statements, 85.71% Branches, 92.88% Functions, 96.99% Lines (exceeding 90/85/90/90).
+- [x] **Production Bundle Budget:** Entry chunk 97.13 kB gzipped (strict budget: < 130 kB).
 - [x] **Defensive Security:** Zod boundary validation, FNV-1a 24h cache TTL, XSS sanitization, CSP headers, and `SECURITY.md` threat model.
 - [x] **Offline Resilience:** Deterministic rule fallbacks operate reliably without API keys or internet connection.
