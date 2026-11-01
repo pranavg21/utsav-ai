@@ -41,6 +41,13 @@ export const COMMUNITY_TASK_TEMPLATES: readonly TaskTemplate[] = [
     dependsOn: ['task-venue'],
   },
   {
+    id: 'task-photo',
+    title: 'Book Event Photographer & Press Media',
+    phase: 'Vendor Locking',
+    timelineFraction: 0.45,
+    dependsOn: ['task-venue'],
+  },
+  {
     id: 'task-logistics',
     title: 'Deploy Sanitation & Volunteer Marshals',
     phase: 'Guest & Logistics',

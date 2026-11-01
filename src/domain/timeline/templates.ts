@@ -9,6 +9,13 @@ import { COMMUNITY_TASK_TEMPLATES } from './templatesCommunity';
 export { BIRTHDAY_TASK_TEMPLATES } from './templatesBirthday';
 export { COMMUNITY_TASK_TEMPLATES } from './templatesCommunity';
 
+export const VENDOR_DELAY_TASK_IDS = {
+  caterer: 'task-caterer',
+  venue: 'task-venue',
+  photographer: 'task-photo',
+  decorator: 'task-decor',
+} as const;
+
 export interface TaskTemplate {
   readonly id: string;
   readonly title: string;

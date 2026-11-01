@@ -3,6 +3,7 @@
  */
 
 import { type Result, okResult, errResult } from '../../types/result';
+import { VENDOR_DELAY_TASK_IDS } from '../timeline/templates';
 
 export interface ChangeRequestIntent {
   readonly target: 'budget' | 'timeline' | 'headcount' | 'scope' | 'vendorDelay' | 'costOverrun';
@@ -45,10 +46,10 @@ function extractNumber(text: string): number | null {
 function parseVendorDelay(lower: string): ChangeRequestIntent | null {
   if (!/delay|delayed|late/i.test(lower)) return null;
   let taskId: string | undefined;
-  if (/cater|food|catering/i.test(lower)) taskId = 'task-caterer';
-  else if (/venue|hall|banquet|hotel/i.test(lower)) taskId = 'task-venue';
-  else if (/photo|videograph/i.test(lower)) taskId = 'task-photographer';
-  else if (/decor|mandap/i.test(lower)) taskId = 'task-decorator';
+  if (/cater|food|catering/i.test(lower)) taskId = VENDOR_DELAY_TASK_IDS.caterer;
+  else if (/venue|hall|banquet|hotel/i.test(lower)) taskId = VENDOR_DELAY_TASK_IDS.venue;
+  else if (/photo|videograph/i.test(lower)) taskId = VENDOR_DELAY_TASK_IDS.photographer;
+  else if (/decor|mandap/i.test(lower)) taskId = VENDOR_DELAY_TASK_IDS.decorator;
   if (!taskId) return null;
   const days = extractNumber(lower) ?? 5;
   return { target: 'vendorDelay', delta: days, unit: 'days', taskId };
@@ -59,7 +60,7 @@ function parseHeadcount(lower: string): ChangeRequestIntent | null {
   if (!isGuest) return null;
   const num = extractNumber(lower);
   if (num === null) return null;
-  const isNegative = /kam|less|reduce|cut|ghatao|minus|-/i.test(lower);
+  const isNegative = /kam|less|reduce|cut|ghatao|minus|fewer|drop|-/i.test(lower);
   return { target: 'headcount', delta: isNegative ? -num : num, unit: 'count' };
 }
 
