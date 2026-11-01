@@ -8,7 +8,7 @@ const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 const DEFAULT_MAX_ENTRIES = 50;
 const STORAGE_PREFIX = 'utsav_cache_';
-const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 1;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface CacheEnvelope<T> {

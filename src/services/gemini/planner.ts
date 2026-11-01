@@ -5,13 +5,13 @@
 
 import type { EventContext, PersonalizedConcept } from '../../types/planner';
 import type { ChangeRequestInput } from '../../types/plannerExtended';
-import { getCachedResponse, setCachedResponse } from '../../utils/cache';
+import { getCachedResponse, setCachedResponse, fnv1aHash, SCHEMA_VERSION } from '../../utils/cache';
 import {
   buildChangeRequestPrompt,
   buildThemeGenerationPrompt,
 } from '../../prompts/celebrationPlannerPrompts';
 import { executeStructuredGeminiCall, getActiveApiKey, getGeminiStatus, setRuntimeApiKey } from './client';
-import { GEMINI_TEMPERATURES } from './config';
+import { GEMINI_MODEL_ID, GEMINI_TEMPERATURES } from './config';
 import {
   AiChangeRequestResponseSchema,
   AiPersonalizedIdeasResponseSchema,
@@ -31,11 +31,11 @@ export async function parseChangeRequestWithAi(
   input: ChangeRequestInput
 ): Promise<AiResult<ParsedChangeResult>> {
   const fallback = buildDeterministicChangeResult(input);
-  const cacheKey = `ai:change:${input.rawPrompt}`;
+  const prompt = buildChangeRequestPrompt(context, input.rawPrompt);
+  const cacheKey = fnv1aHash(`${GEMINI_MODEL_ID}:v${SCHEMA_VERSION}:${prompt}`);
   const cached = getCachedResponse<AiResult<ParsedChangeResult>>(cacheKey);
   if (cached !== null) return cached;
 
-  const prompt = buildChangeRequestPrompt(context, input.rawPrompt);
   const result = await executeStructuredGeminiCall(
     prompt,
     AiChangeRequestResponseSchema,
@@ -54,11 +54,11 @@ export async function parseChangeRequestWithAi(
       recommendedActions: fallback.recommendedActions,
     };
     output = { data, provenance: { source: 'gemini', model: result.model } };
+    setCachedResponse(cacheKey, output);
   } else {
     output = { data: fallback, provenance: { source: 'deterministic', reason: result.reason } };
   }
 
-  setCachedResponse(cacheKey, output);
   return output;
 }
 
@@ -66,11 +66,11 @@ export async function generateThemesWithAi(
   context: EventContext
 ): Promise<AiResult<PersonalizedConcept[]>> {
   const fallback = buildDeterministicThemes(context);
-  const cacheKey = `ai:themes:${context.occasion}:${context.totalBudget}`;
+  const prompt = buildThemeGenerationPrompt(context);
+  const cacheKey = fnv1aHash(`${GEMINI_MODEL_ID}:v${SCHEMA_VERSION}:${prompt}`);
   const cached = getCachedResponse<AiResult<PersonalizedConcept[]>>(cacheKey);
   if (cached !== null) return cached;
 
-  const prompt = buildThemeGenerationPrompt(context);
   const result = await executeStructuredGeminiCall(
     prompt,
     AiPersonalizedIdeasResponseSchema,
@@ -92,11 +92,11 @@ export async function generateThemesWithAi(
       budgetFriendlyAlternative: item.budgetFriendlyAlternative,
     }));
     output = { data, provenance: { source: 'gemini', model: result.model } };
+    setCachedResponse(cacheKey, output);
   } else {
     output = { data: fallback, provenance: { source: 'deterministic', reason: result.reason } };
   }
 
-  setCachedResponse(cacheKey, output);
   return output;
 }
 
