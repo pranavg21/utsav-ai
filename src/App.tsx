@@ -8,6 +8,7 @@ import Header from './components/Header';
 import ContextIntakePanel from './components/ContextIntakePanel';
 import RippleEffectSimulator from './components/RippleEffectSimulator';
 import { AssumptionsPanel } from './components/AssumptionsPanel';
+import { TabSkeleton } from './components/TabSkeleton';
 import { DEFAULT_ASSUMPTIONS, type EventAssumptions } from './data/assumptions';
 import { usePlan } from './hooks/usePlan';
 import { downloadPlanJson } from './utils/exportPlan';
@@ -24,25 +25,23 @@ const SubEventsTab = lazy(() => import('./components/subEvents/SubEventsTab'));
 type TabId = 'budget' | 'timeline' | 'checklist' | 'vendor' | 'ideas' | 'subevents';
 
 const TABS: ReadonlyArray<{ readonly id: TabId; readonly label: string }> = [
-  { id: 'budget', label: 'Budget Matrix' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'checklist', label: 'Vendor Checklist' },
-  { id: 'vendor', label: 'Vendor Quotes' },
-  { id: 'ideas', label: 'Theme Ideas' },
-  { id: 'subevents', label: 'Sub-Events' },
+  { id: 'budget', label: 'Budget Matrix' }, { id: 'timeline', label: 'Timeline' },
+  { id: 'checklist', label: 'Vendor Checklist' }, { id: 'vendor', label: 'Vendor Quotes' },
+  { id: 'ideas', label: 'Theme Ideas' }, { id: 'subevents', label: 'Sub-Events' },
 ];
 
-const TabSkeleton: React.FC = () => (
-  <div
-    role="status"
-    aria-busy="true"
-    aria-label="Loading tab content"
-    className="h-64 animate-pulse rounded-2xl border border-slate-800 bg-slate-900/50 p-6"
-  >
-    <div className="h-6 w-1/3 rounded bg-slate-800" />
-    <div className="mt-4 h-40 rounded bg-slate-800/60" />
-  </div>
-);
+const EXPORT_CLASS =
+  'inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-3.5 ' +
+  'py-1.5 text-xs font-semibold text-slate-200 transition hover:border-saffron-500';
+
+function getTabClass(isActive: boolean): string {
+  const active = 'border-saffron-500 text-saffron-400';
+  const inactive =
+    'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200';
+  return `border-b-2 px-5 py-2.5 text-sm font-semibold transition shrink-0 ${
+    isActive ? active : inactive
+  }`;
+}
 
 const App: React.FC = () => {
   const { state, derived, actions } = usePlan();
@@ -56,8 +55,10 @@ const App: React.FC = () => {
     downloadPlanJson({ context, budget: derived.evaluation, timeline: tasks, vendors: quotes, checklist });
   };
 
+  const appClass = `min-h-screen bg-slate-950 text-slate-100 ${isHighContrast ? 'contrast-125' : ''} ${isLargeText ? 'text-lg' : ''}`;
+
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-100 ${isHighContrast ? 'contrast-125' : ''} ${isLargeText ? 'text-lg' : ''}`}>
+    <div className={appClass}>
       <Header
         onSelectPreset={(ctx) => actions.loadPreset({ id: 'custom', title: ctx.eventName, context: ctx })}
         onToggleContrast={() => setHighContrast((c) => !c)}
@@ -70,7 +71,7 @@ const App: React.FC = () => {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-saffron-500 hover:text-saffron-400"
+            className={EXPORT_CLASS}
             aria-label="Export complete celebration plan as JSON"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
@@ -91,7 +92,7 @@ const App: React.FC = () => {
               tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               aria-label={`Switch to ${tab.label} tab`}
-              className={`border-b-2 px-5 py-2.5 text-sm font-semibold transition shrink-0 ${activeTab === tab.id ? 'border-saffron-500 text-saffron-400' : 'border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
+              className={getTabClass(activeTab === tab.id)}
               aria-selected={activeTab === tab.id}
             >
               {tab.label}

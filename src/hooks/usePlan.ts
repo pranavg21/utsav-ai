@@ -77,10 +77,17 @@ export function usePlan(
   const loadPreset = useCallback((preset: CelebrationPreset) => dispatch({ type: 'LOAD_PRESET', payload: preset }), []);
   const updateContext = useCallback((updates: Partial<EventContext>) => dispatch({ type: 'UPDATE_CONTEXT', payload: updates }), []);
   const applyChange = useCallback((change: ChangeRequestInput) => dispatch({ type: 'APPLY_CHANGE', payload: change }), []);
-  const setProjected = useCallback((categoryId: string, amount: number) => dispatch({ type: 'SET_PROJECTED', payload: { categoryId, amount } }), []);
+  const setProjected = useCallback(
+    (categoryId: string, amount: number) => dispatch({ type: 'SET_PROJECTED', payload: { categoryId, amount } }),
+    []
+  );
   const toggleVerified = useCallback((categoryId: string) => dispatch({ type: 'TOGGLE_VERIFIED', payload: { categoryId } }), []);
   const applyTradeoff = useCallback((scenario: TradeOffScenario) => dispatch({ type: 'APPLY_TRADEOFF', payload: { scenario } }), []);
-  const setTaskStatus = useCallback((taskId: string, status: TaskStatus, delayDays?: number) => dispatch({ type: 'SET_TASK_STATUS', payload: { taskId, status, delayDays } }), []);
+  const setTaskStatus = useCallback(
+    (taskId: string, status: TaskStatus, delayDays?: number) =>
+      dispatch({ type: 'SET_TASK_STATUS', payload: { taskId, status, delayDays } }),
+    []
+  );
   const addQuote = useCallback((quote: VendorQuote) => dispatch({ type: 'ADD_QUOTE', payload: quote }), []);
   const toggleQuoteVerified = useCallback((quoteId: string) => dispatch({ type: 'TOGGLE_QUOTE_VERIFIED', payload: { quoteId } }), []);
 
@@ -98,7 +105,10 @@ export function usePlan(
     []
   );
 
-  const setChecklist = useCallback((checklist: readonly VendorChecklistItem[]) => dispatch({ type: 'SET_CHECKLIST', payload: checklist }), []);
+  const setChecklist = useCallback(
+    (checklist: readonly VendorChecklistItem[]) => dispatch({ type: 'SET_CHECKLIST', payload: checklist }),
+    []
+  );
 
   const updateSubEvent = useCallback(
     (

@@ -69,7 +69,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = React.memo(
             value={apiKey}
             onChange={(e) => onChangeKey(e.target.value)}
             placeholder="Paste your Gemini API key here"
-            className="mb-4 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none"
+            className={
+              'mb-4 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 ' +
+              'text-sm text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none'
+            }
             aria-label="Gemini API key input"
             autoFocus
           />
@@ -94,7 +97,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = React.memo(
               <button
                 type="button"
                 onClick={onSave}
-                className="rounded-lg bg-saffron-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:bg-saffron-500"
+                className={
+                  'rounded-lg bg-saffron-600 px-3.5 py-1.5 text-xs font-semibold ' +
+                  'text-white shadow-lg transition hover:bg-saffron-500'
+                }
               >
                 Save & Connect
               </button>

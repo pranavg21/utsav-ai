@@ -4,30 +4,30 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Zap, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Zap, MessageSquare } from 'lucide-react';
 import type { EventContext, ChangeRequestInput } from '../types/planner';
 import { sanitizeUserText } from '../utils/security';
 import { CARD_CLASSES, BADGE_BASE, formatINR } from '../utils/uiHelpers';
 
-/** Predefined shock scenario for 1-click triggering. */
 interface ShockPreset {
   readonly label: string;
   readonly input: ChangeRequestInput;
 }
 
-/** Props for the RippleEffectSimulator component. */
 interface RippleProps {
   readonly context: EventContext;
   readonly onApplyChange: (input: ChangeRequestInput) => void;
 }
 
-/**
- * Ripple-Effect simulator with preset shock buttons and custom NLP input.
- *
- * @param props - Component props with context and change handler.
- * @returns Simulator section React element.
- */
-const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }) => {
+const SHOCK_BTN_CLASS =
+  'flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 ' +
+  'text-xs font-medium text-red-300 transition hover:bg-red-500/20 hover:text-red-200';
+
+const PROMPT_INPUT_CLASS =
+  'w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm ' +
+  'text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none';
+
+export const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [lastApplied, setLastApplied] = useState<string | null>(null);
 
@@ -63,9 +63,7 @@ const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }
   );
 
   const handleCustomSubmit = useCallback((): void => {
-    if (!customPrompt.trim()) {
-      return;
-    }
+    if (!customPrompt.trim()) return;
     const sanitized = sanitizeUserText(customPrompt);
     setLastApplied(sanitized);
     onApplyChange({ rawPrompt: sanitized });
@@ -74,8 +72,8 @@ const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }
 
   return (
     <section className={CARD_CLASSES} aria-label="Ripple effect simulator">
-      <div className="mb-3 flex items-center gap-2">
-        <AlertTriangle className="h-5 w-5 text-amber-400" aria-hidden="true" />
+      <div className="mb-4 flex items-center gap-2">
+        <Zap className="h-5 w-5 text-red-400" aria-hidden="true" />
         <h2 className="text-lg font-bold text-slate-100">Ripple-Effect & Change Simulator</h2>
       </div>
       <div className="mb-4 flex flex-wrap gap-2">
@@ -83,7 +81,7 @@ const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }
           <button
             key={idx}
             onClick={() => handleShockClick(shock)}
-            className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 transition hover:bg-red-500/20 hover:text-red-200"
+            className={SHOCK_BTN_CLASS}
             aria-label={`Apply shock: ${shock.label}`}
           >
             <Zap className="h-3.5 w-3.5" aria-hidden="true" />
@@ -93,20 +91,15 @@ const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }
       </div>
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <MessageSquare
-            className="absolute left-3 top-2.5 h-4 w-4 text-slate-500"
-            aria-hidden="true"
-          />
+          <MessageSquare className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" aria-hidden="true" />
           <input
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleCustomSubmit();
-              }
+              if (e.key === 'Enter') handleCustomSubmit();
             }}
             placeholder="Describe any change in natural language…"
-            className="w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none"
+            className={PROMPT_INPUT_CLASS}
             aria-label="Custom change request input"
           />
         </div>

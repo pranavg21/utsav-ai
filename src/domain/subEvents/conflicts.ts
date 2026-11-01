@@ -57,7 +57,8 @@ function checkTransitConflicts(subEvents: ReadonlyArray<SubEvent>): SubEventConf
           type: 'transit',
           severity: 'warning',
           subEventIds: [a.id, b.id],
-          message: `${a.name} and ${b.name} are on the same day at different venues (${a.venueType} vs ${b.venueType}). Ensure at least 2 hours transit time.`,
+          message: `${a.name} and ${b.name} are on the same day at different venues (${a.venueType} vs ${b.venueType}). ` +
+            'Ensure at least 2 hours transit time.',
         });
       }
     }

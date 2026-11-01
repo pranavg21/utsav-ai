@@ -30,7 +30,7 @@ describe('Vendor Pasted Quote Parser Hardening (9.8)', () => {
   it('calculates allInCost and attaches to quote', () => {
     const text = '₹1,000 per plate for 100 guests';
     const quote = analyzeRawQuoteText(text, 'Catering & Hospitality', 100);
-    expect(quote.allInCost).toBeDefined();
+    expect(typeof quote.allInCost).toBe('number');
     expect(quote.allInCost).toBeGreaterThan(quote.quotedPrice);
   });
 });

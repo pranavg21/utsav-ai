@@ -1,30 +1,39 @@
 /**
- * @fileoverview Vendor quote comparison tab with side-by-side cards and raw quote analysis.
+ * @fileoverview Vendor quote comparator tab with pasted quote analysis and comparison cards.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import type { BudgetCategoryName, EventContext, VendorQuote } from '../types/planner';
-import { analyzeRawQuoteText } from '../domain/vendors/normalize';
-import { isBudgetCategoryName } from '../utils/typeGuards';
-import { sanitizeUserText } from '../utils/security';
 import { CARD_CLASSES } from '../utils/uiHelpers';
+import { analyzeRawQuoteText } from '../domain/vendors/normalize';
+import { sanitizeUserText } from '../utils/security';
+import { isBudgetCategoryName } from '../utils/typeGuards';
 import { VendorQuoteCard } from './vendors/VendorQuoteCard';
 
 interface VendorComparatorProps {
-  readonly quotes: readonly VendorQuote[];
+  readonly quotes: ReadonlyArray<VendorQuote>;
   readonly context: EventContext;
   readonly categoryBudgets: Record<string, number>;
   readonly onToggleVerified: (quoteId: string) => void;
   readonly onAddQuote: (quote: VendorQuote) => void;
 }
 
-const CATEGORIES: readonly BudgetCategoryName[] = [
+const CATEGORIES: BudgetCategoryName[] = [
   'Venue & Logistics',
   'Catering & Hospitality',
   'Decor & Ambience',
   'Photography & Media',
   'Entertainment & Rituals',
+  'Contingency Reserve',
 ];
+
+const SELECT_CLASS =
+  'rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-200 ' +
+  'focus:border-saffron-500 focus:outline-none';
+
+const TEXTAREA_CLASS =
+  'mb-2 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm ' +
+  'text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none';
 
 const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
   ({ quotes, context, categoryBudgets, onToggleVerified, onAddQuote }) => {
@@ -33,10 +42,16 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
 
     const handleParse = useCallback((): void => {
       if (!rawText.trim()) return;
-      const parsed = analyzeRawQuoteText(sanitizeUserText(rawText, 5000), parseCategory, context.guestCount);
+      const parsed = analyzeRawQuoteText(
+        sanitizeUserText(rawText, 5000),
+        parseCategory,
+        context.guestCount
+      );
       onAddQuote(parsed);
       setRawText('');
     }, [rawText, parseCategory, context.guestCount, onAddQuote]);
+
+    const renderedQuotes = useMemo(() => quotes, [quotes]);
 
     return (
       <section aria-label="Vendor quote comparator">
@@ -44,12 +59,12 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
           Vendor Quote Comparator & Negotiation Copilot
         </h2>
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {quotes.map((quote) => (
+          {renderedQuotes.map((q) => (
             <VendorQuoteCard
-              key={quote.id}
-              quote={quote}
+              key={q.id}
+              quote={q}
               context={context}
-              budget={categoryBudgets[quote.category] ?? 0}
+              budget={categoryBudgets[q.category] ?? 0}
               onToggleVerified={onToggleVerified}
             />
           ))}
@@ -63,7 +78,7 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
                 const v = e.target.value;
                 if (isBudgetCategoryName(v)) setParseCategory(v);
               }}
-              className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-200 focus:border-saffron-500 focus:outline-none"
+              className={SELECT_CLASS}
               aria-label="Quote category"
             >
               {CATEGORIES.map((c) => (
@@ -76,7 +91,7 @@ const VendorComparatorTab: React.FC<VendorComparatorProps> = React.memo(
             onChange={(e) => setRawText(e.target.value)}
             rows={3}
             placeholder="Paste vendor quote text here…"
-            className="mb-2 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-saffron-500 focus:outline-none"
+            className={TEXTAREA_CLASS}
             aria-label="Raw vendor quote text"
           />
           <button

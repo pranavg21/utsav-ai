@@ -97,7 +97,12 @@ function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 
 }
 
 function isLifecycleAction(action: PlanAction): action is LifecycleAction {
-  return action.type === 'LOAD_PRESET' || action.type === 'UPDATE_CONTEXT' || action.type === 'APPLY_CHANGE' || action.type === 'SET_TASK_STATUS';
+  return (
+    action.type === 'LOAD_PRESET' ||
+    action.type === 'UPDATE_CONTEXT' ||
+    action.type === 'APPLY_CHANGE' ||
+    action.type === 'SET_TASK_STATUS'
+  );
 }
 
 function reduceLifecycle(state: PlanState, action: LifecycleAction): PlanState {

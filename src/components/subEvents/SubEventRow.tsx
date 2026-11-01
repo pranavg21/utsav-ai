@@ -19,6 +19,18 @@ export interface SubEventRowProps {
   ) => void;
 }
 
+const ROW_CLASS =
+  'flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition ' +
+  'hover:border-slate-700 sm:flex-row sm:items-center sm:justify-between';
+
+const GUEST_INPUT_CLASS =
+  'w-24 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 ' +
+  'focus:border-saffron-500 focus:outline-none';
+
+const SHARE_INPUT_CLASS =
+  'w-20 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 ' +
+  'focus:border-saffron-500 focus:outline-none';
+
 export const SubEventRow: React.FC<SubEventRowProps> = ({
   subEvent,
   totalBudget,
@@ -34,7 +46,7 @@ export const SubEventRow: React.FC<SubEventRowProps> = ({
     <div
       role="region"
       aria-label={`${subEvent.name} configuration`}
-      className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700 sm:flex-row sm:items-center sm:justify-between"
+      className={ROW_CLASS}
     >
       <div className="space-y-1 sm:max-w-xs">
         <div className="flex items-center gap-2">
@@ -65,7 +77,7 @@ export const SubEventRow: React.FC<SubEventRowProps> = ({
               })
             }
             aria-label={`${subEvent.name} guest count`}
-            className="w-24 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 focus:border-saffron-500 focus:outline-none"
+            className={GUEST_INPUT_CLASS}
           />
         </div>
 
@@ -92,7 +104,7 @@ export const SubEventRow: React.FC<SubEventRowProps> = ({
                 })
               }
               aria-label={`${subEvent.name} budget share percentage`}
-              className="w-20 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 focus:border-saffron-500 focus:outline-none"
+              className={SHARE_INPUT_CLASS}
             />
             <span className="text-xs text-slate-400">%</span>
           </div>

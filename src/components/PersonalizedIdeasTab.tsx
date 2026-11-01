@@ -16,6 +16,10 @@ const COST_FIT_STYLES: Record<PersonalizedConcept['estimatedCostFit'], string> =
   'Requires Trade-Off': 'bg-red-500/20 text-red-400',
 };
 
+const REGEN_BTN_CLASS =
+  'rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium ' +
+  'text-slate-300 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50';
+
 interface IdeasTabProps {
   readonly context: EventContext;
 }
@@ -40,7 +44,7 @@ export const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
             type="button"
             onClick={refreshThemes}
             disabled={loading}
-            className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-saffron-500 hover:text-saffron-400 disabled:opacity-50"
+            className={REGEN_BTN_CLASS}
           >
             {loading ? 'Generating...' : 'Regenerate Ideas'}
           </button>
@@ -53,51 +57,50 @@ export const PersonalizedIdeasTab: React.FC<IdeasTabProps> = ({ context }) => {
         </div>
       )}
 
-      {loading && themes.length === 0 ? (
-        <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
-          Crafting personalized concepts with Gemini 2.5 Flash...
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {themes.map((theme) => (
-            <div key={theme.id} className={`${CARD_CLASSES} flex flex-col justify-between p-5 space-y-4`}>
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-slate-100">{theme.title}</h3>
-                  <span className={`${BADGE_BASE} ${COST_FIT_STYLES[theme.estimatedCostFit]}`}>
-                    {theme.estimatedCostFit}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed text-slate-300">{theme.atmosphereSummary}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {themes.map((theme) => (
+          <article
+            key={theme.id}
+            className={`${CARD_CLASSES} flex flex-col justify-between`}
+            aria-labelledby={`theme-title-${theme.id}`}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className={`${BADGE_BASE} ${COST_FIT_STYLES[theme.estimatedCostFit]}`}>
+                  <Coins className="w-3 h-3" /> {theme.estimatedCostFit}
+                </span>
               </div>
+              <h3 id={`theme-title-${theme.id}`} className="text-base font-bold text-slate-100">
+                {theme.title}
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">{theme.atmosphereSummary}</p>
 
-              <div className="space-y-2 border-t border-slate-800/80 pt-3 text-xs">
-                <h4 className="font-medium text-slate-400">Multi-Generational Inclusivity:</h4>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Baby className="h-3.5 w-3.5 text-pink-400 shrink-0" aria-hidden="true" />
-                  <span>{theme.multiGenerationalAdaptations.children}</span>
+              <div className="space-y-2 pt-2 border-t border-slate-800 text-xs">
+                <div className="flex items-start gap-2 text-slate-300">
+                  <Baby className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <span><strong>Kids:</strong> {theme.multiGenerationalAdaptations.children}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <HeartHandshake className="h-3.5 w-3.5 text-purple-400 shrink-0" aria-hidden="true" />
-                  <span>{theme.multiGenerationalAdaptations.seniors}</span>
+                <div className="flex items-start gap-2 text-slate-300">
+                  <HeartHandshake className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                  <span><strong>Seniors:</strong> {theme.multiGenerationalAdaptations.seniors}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Accessibility className="h-3.5 w-3.5 text-cyan-400 shrink-0" aria-hidden="true" />
-                  <span>{theme.multiGenerationalAdaptations.accessibility}</span>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs">
-                <div className="flex items-center gap-1.5 font-medium text-amber-400 mb-1">
-                  <Coins className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  Budget-Friendly Swap:
-                </div>
-                <p className="text-slate-300">{theme.budgetFriendlyAlternative}</p>
+                {theme.multiGenerationalAdaptations.accessibility && (
+                  <div className="flex items-start gap-2 text-slate-300">
+                    <Accessibility className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                    <span><strong>Access:</strong> {theme.multiGenerationalAdaptations.accessibility}</span>
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="mt-4 pt-3 border-t border-slate-800/80 bg-slate-950/40 -mx-4 -mb-4 p-3 rounded-b-xl">
+              <p className="text-[11px] text-emerald-400">
+                <strong>Budget alternative:</strong> {theme.budgetFriendlyAlternative}
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   );
 };

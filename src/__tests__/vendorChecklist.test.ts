@@ -27,7 +27,7 @@ describe('Vendor Checklist Domain & Integration', () => {
 
     // Verify community includes local authority verification
     const approvalItem = community.find((i) => i.id === 'chk-comm-approvals');
-    expect(approvalItem).toBeDefined();
+    expect(approvalItem?.id).toBe('chk-comm-approvals');
     expect(approvalItem?.mustAsk.some((q) => q.includes('Verify with local authority'))).toBe(true);
   });
 

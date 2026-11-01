@@ -19,6 +19,10 @@ interface BudgetMatrixProps {
   readonly onApplyTradeOff: (scenario: TradeOffScenario) => void;
 }
 
+const INPUT_CLASS =
+  'w-28 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-right ' +
+  'text-sm text-slate-100 focus:border-saffron-500 focus:outline-none';
+
 const BudgetMatrixTab: React.FC<BudgetMatrixProps> = React.memo(
   ({ evaluation, onToggleVerified, onUpdateAmount, onApplyTradeOff }) => {
     const handleAmountChange = useCallback(
@@ -69,7 +73,7 @@ const BudgetMatrixTab: React.FC<BudgetMatrixProps> = React.memo(
                         type="number"
                         value={item.projectedAmount}
                         onChange={(e) => handleAmountChange(item, e.target.value)}
-                        className="w-28 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-right text-sm text-slate-100 focus:border-saffron-500 focus:outline-none"
+                        className={INPUT_CLASS}
                         aria-label={`Projected amount for ${item.category}`}
                       />
                     </td>

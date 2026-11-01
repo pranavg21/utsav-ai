@@ -28,7 +28,7 @@ describe('detectSubEventConflicts', () => {
     }));
     const conflicts = detectSubEventConflicts(invalidShares, 300);
     const shareWarning = conflicts.find((c) => c.type === 'share');
-    expect(shareWarning).toBeDefined();
+    expect(shareWarning?.type).toBe('share');
     expect(shareWarning?.message).toContain('Total sub-event budget allocation is 50%');
   });
 });

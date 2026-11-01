@@ -73,7 +73,7 @@ describe('uiHelpers', () => {
       ];
 
       for (const cat of categories) {
-        expect(CATEGORY_ICONS[cat]).toBeDefined();
+        expect(typeof CATEGORY_ICONS[cat]).toBe('string');
         expect(typeof CATEGORY_ICONS[cat]).toBe('string');
       }
     });

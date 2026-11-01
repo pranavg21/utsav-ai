@@ -11,10 +11,10 @@ describe('usePlan hook', () => {
   it('provides initial state, selectors, and updates context', () => {
     const { result } = renderHook(() => usePlan());
 
-    expect(result.current.state.context.eventName).toBeDefined();
-    expect(result.current.derived.evaluation).toBeDefined();
-    expect(result.current.derived.bottlenecks).toBeDefined();
-    expect(result.current.derived.subEventRollup).toBeDefined();
+    expect(result.current.state.context.eventName).toBe('Grand Family Wedding');
+    expect(result.current.derived.evaluation.totalBudget).toBe(800000);
+    expect(Array.isArray(result.current.derived.bottlenecks)).toBe(true);
+    expect(result.current.derived.subEventRollup.totalSharePercent).toBe(100);
 
     act(() => {
       result.current.actions.updateContext({ guestCount: 250 });

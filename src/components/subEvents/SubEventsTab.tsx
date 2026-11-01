@@ -25,6 +25,10 @@ export interface SubEventsTabProps {
   ) => void;
 }
 
+const HEADER_CARD_CLASS =
+  'flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 ' +
+  'sm:flex-row sm:items-center sm:justify-between';
+
 export const SubEventsTab: React.FC<SubEventsTabProps> = ({
   subEvents,
   totalBudget,
@@ -44,7 +48,7 @@ export const SubEventsTab: React.FC<SubEventsTabProps> = ({
 
   return (
     <div className="space-y-6" role="tabpanel" aria-label="Sub-Events and Multi-Function Coordination">
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className={HEADER_CARD_CLASS}>
         <div>
           <h2 className="text-lg font-semibold text-slate-100">
             Multi-Function Event Coordination

@@ -96,7 +96,11 @@ export const COMMUNITY_VENDOR_TEMPLATES: readonly VendorChecklistItem[] = [
     status: 'not-started',
     dueDaysBeforeEvent: 30,
     linkedTaskId: 'task-approvals',
-    mustAsk: ['Verify with local authority: police NOC obtained?', 'Verify with local authority: fire safety clearance?', 'Loudspeaker permit valid till 10 PM?'],
+    mustAsk: [
+          'Verify with local authority: police NOC obtained?',
+          'Verify with local authority: fire safety clearance?',
+          'Loudspeaker permit valid till 10 PM?',
+        ],
     documents: ['Police permission letter', 'Fire NOC', 'Municipal amplifier permit'],
     isVerifiedQuote: false,
     estimatedCost: 10000,

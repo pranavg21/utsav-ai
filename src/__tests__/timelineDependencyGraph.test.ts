@@ -40,10 +40,14 @@ describe('Timeline DAG & Delay Propagation', () => {
 
   it('diamond dependency: A->B, A->C, B->D, C->D shifts D by exactly delayDays (idempotent)', () => {
     const diamond: TimelineTask[] = [
-      { id: 'A', title: 'A', phase: 'Foundation', daysBeforeEvent: 40, delayDays: 0, status: 'pending', dependsOn: [], isBottleneck: false, delayImpactNote: '' },
-      { id: 'B', title: 'B', phase: 'Vendor Locking', daysBeforeEvent: 30, delayDays: 0, status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
-      { id: 'C', title: 'C', phase: 'Vendor Locking', daysBeforeEvent: 25, delayDays: 0, status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
-      { id: 'D', title: 'D', phase: 'Final Execution', daysBeforeEvent: 15, delayDays: 0, status: 'pending', dependsOn: ['B', 'C'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'A', title: 'A', phase: 'Foundation', daysBeforeEvent: 40, delayDays: 0,
+        status: 'pending', dependsOn: [], isBottleneck: false, delayImpactNote: '' },
+      { id: 'B', title: 'B', phase: 'Vendor Locking', daysBeforeEvent: 30, delayDays: 0,
+        status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'C', title: 'C', phase: 'Vendor Locking', daysBeforeEvent: 25, delayDays: 0,
+        status: 'pending', dependsOn: ['A'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'D', title: 'D', phase: 'Final Execution', daysBeforeEvent: 15, delayDays: 0,
+        status: 'pending', dependsOn: ['B', 'C'], isBottleneck: false, delayImpactNote: '' },
     ];
 
     const delayed = propagateDelay(diamond, 'A', 10);
@@ -60,8 +64,10 @@ describe('Timeline DAG & Delay Propagation', () => {
 
   it('detects cycles and returns error containing cycle path', () => {
     const cyclic: TimelineTask[] = [
-      { id: 'T1', title: 'T1', phase: 'Foundation', daysBeforeEvent: 10, delayDays: 0, status: 'pending', dependsOn: ['T2'], isBottleneck: false, delayImpactNote: '' },
-      { id: 'T2', title: 'T2', phase: 'Foundation', daysBeforeEvent: 5, delayDays: 0, status: 'pending', dependsOn: ['T1'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'T1', title: 'T1', phase: 'Foundation', daysBeforeEvent: 10, delayDays: 0,
+        status: 'pending', dependsOn: ['T2'], isBottleneck: false, delayImpactNote: '' },
+      { id: 'T2', title: 'T2', phase: 'Foundation', daysBeforeEvent: 5, delayDays: 0,
+        status: 'pending', dependsOn: ['T1'], isBottleneck: false, delayImpactNote: '' },
     ];
     const res = recalculateTimeline(cyclic);
     expect(res.ok).toBe(false);
@@ -78,7 +84,7 @@ describe('Timeline DAG & Delay Propagation', () => {
     const delayed = propagateDelay(tasks, 'task-dayof', 15);
     const dayof = delayed.find((t) => t.id === 'task-dayof');
     expect(dayof?.isInfeasible).toBe(true);
-    expect(dayof?.minimumNoticeDays).toBeDefined();
+    expect(dayof?.minimumNoticeDays).toBe(16);
 
     // Timeline compression causing infeasibility
     const compressed = compressTimeline(tasks, 120);

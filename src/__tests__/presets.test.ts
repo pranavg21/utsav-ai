@@ -55,7 +55,7 @@ describe('presets', () => {
     it('should expose presets with descriptive labels', () => {
       expect(ALL_PRESETS).toHaveLength(3);
       for (const preset of ALL_PRESETS) {
-        expect(preset.label).toBeTruthy();
+        expect(preset.label.length).toBeGreaterThan(0);
         expect(preset.value.totalBudget).toBeGreaterThan(0);
         expect(preset.value.guestCount).toBeGreaterThan(0);
       }

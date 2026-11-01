@@ -69,12 +69,12 @@ describe('geminiPlannerService', () => {
       expect(result.provenance.source).toBe('deterministic');
       expect(result.data).toHaveLength(3);
       for (const theme of result.data) {
-        expect(theme.id).toBeDefined();
-        expect(theme.title).toBeDefined();
+        expect(theme.id.length).toBeGreaterThan(0);
+        expect(theme.title.length).toBeGreaterThan(0);
         expect(theme.estimatedCostFit).toMatch(/Well Within Budget|Moderate Stretch|Requires Trade-Off/);
-        expect(theme.multiGenerationalAdaptations.children).toBeDefined();
-        expect(theme.multiGenerationalAdaptations.seniors).toBeDefined();
-        expect(theme.budgetFriendlyAlternative).toBeDefined();
+        expect(theme.multiGenerationalAdaptations.children.length).toBeGreaterThan(0);
+        expect(theme.multiGenerationalAdaptations.seniors.length).toBeGreaterThan(0);
+        expect(theme.budgetFriendlyAlternative.length).toBeGreaterThan(0);
       }
     });
 
