@@ -59,4 +59,29 @@ describe('useThemes hook debouncing and stale discard (10.8)', () => {
     expect(planner.generateThemesWithAi).toHaveBeenCalledTimes(1);
     expect(planner.generateThemesWithAi).toHaveBeenCalledWith(BIRTHDAY_PRESET);
   });
+
+  it('handles errors and allows manual refresh immediately', async () => {
+    vi.mocked(planner.generateThemesWithAi).mockRejectedValueOnce(new Error('AI generation failed'));
+
+    const { result } = renderHook(() => useThemes(WEDDING_PRESET));
+
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(result.current.error).toBe('AI generation failed');
+    expect(result.current.loading).toBe(false);
+
+    // Refresh succeeds
+    vi.mocked(planner.generateThemesWithAi).mockResolvedValueOnce({
+      data: [],
+      provenance: { source: 'deterministic', reason: 'offline' },
+    });
+
+    await act(async () => {
+      result.current.refreshThemes();
+    });
+
+    expect(result.current.error).toBe('');
+  });
 });

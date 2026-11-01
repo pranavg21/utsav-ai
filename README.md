@@ -174,7 +174,7 @@ npm run dev
 - [x] **Equal Depth Across Occasions:** 3 × 4 matrix complete for Wedding, Birthday, and Community with dedicated budget shares, DAG tasks, vendor templates, and ideas.
 - [x] **Vendor Checklists:** First-class interactive tab linking due dates to DAG timeline tasks and synchronizing booked prices to budget projections.
 - [x] **Zero Placeholder UI:** Complete live interactive state transitions across diagnostic intake, budget matrix, DAG timeline, vendor quotes, vendor checklists, and crisis simulator.
-- [x] **Complete Test Breadth:** 57 test suites, 255 unit and integration tests passing, property-based verification via `fast-check`, and WCAG 2.1 AA audits via `vitest-axe` (0 violations).
+- [x] **Complete Test Breadth:** 57 test suites, 257 unit and integration tests passing, property-based verification via `fast-check`, and WCAG 2.1 AA audits via `vitest-axe` (0 violations).
 - [x] **Coverage Thresholds Met:** 98.14% Statements, 85.49% Branches, 94.08% Functions, 98.14% Lines (exceeding 90/85/90/90).
 - [x] **Production Bundle Budget:** Entry chunk 92.16 kB gzipped (strict budget: < 130 kB).
 - [x] **Defensive Security:** Zod boundary validation, FNV-1a 24h cache TTL, XSS sanitization, CSP headers, and `SECURITY.md` threat model.

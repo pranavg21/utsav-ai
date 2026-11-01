@@ -29,6 +29,12 @@ describe('buildDeterministicThemes dynamic input adaptation (10.6)', () => {
     });
     const adapt = withAccess[0]?.multiGenerationalAdaptations.accessibility;
     expect(adapt).toContain('"Wheelchair access, Sign language interpreter"');
+
+    const defaultAccess = buildDeterministicThemes({
+      ...WEDDING_PRESET,
+      accessibilityNeeds: [],
+    });
+    expect(defaultAccess[0]?.multiGenerationalAdaptations.accessibility).toContain('Step-free circulation pathways');
   });
 
   it('ensures each item in mustHaves appears in at least one concept', () => {
