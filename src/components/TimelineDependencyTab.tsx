@@ -79,6 +79,13 @@ const TimelineDependencyTab: React.FC<TimelineTabProps> = ({ tasks, onToggleStat
                           <span className="text-red-400">(+{task.delayDays}d delayed)</span>
                         )}
                       </div>
+                      {task.isImpacted && (
+                        <div className="mt-1">
+                          <span className={`${BADGE_BASE} bg-amber-500/20 text-amber-300 text-xs`}>
+                            Impacted by {tasks.find((t) => task.dependsOn.includes(t.id) && t.delayDays > 0)?.title ?? 'prerequisite'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => handleCycleStatus(task)}

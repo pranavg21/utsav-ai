@@ -35,6 +35,8 @@ export interface TimelineTask {
   isInfeasible?: boolean | undefined;
   /** Minimum notice in days required to execute this task without timeline breach. */
   minimumNoticeDays?: number | undefined;
+  /** True if this task was shifted due to an upstream prerequisite delay. */
+  isImpacted?: boolean | undefined;
 }
 
 /**

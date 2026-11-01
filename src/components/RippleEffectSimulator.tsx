@@ -47,7 +47,10 @@ const RippleEffectSimulator: React.FC<RippleProps> = ({ context, onApplyChange }
     },
     {
       label: `Venue Booking Delayed by 10 Days`,
-      input: { rawPrompt: 'Venue booking delayed by 10 days', timelineDeltaDays: -10 },
+      input: {
+        rawPrompt: 'Venue booking delayed by 10 days',
+        vendorDelay: { taskId: 'task-venue', days: 10 },
+      },
     },
   ];
 

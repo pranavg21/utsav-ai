@@ -14,7 +14,7 @@ import type { SubEvent } from '../domain/subEvents/types';
 import { getSubEventsForOccasion } from '../domain/subEvents/types';
 import { buildInitialBudgetItems, mergeBudgetAllocations } from '../domain/budget/allocation';
 import { buildInitialCelebrationTasks } from '../domain/timeline/graph';
-import { propagateDelay, compressTimeline } from '../domain/timeline/propagate';
+import { propagateDelay, compressTimeline, recalculateTimeline } from '../domain/timeline/propagate';
 import { getPresetVendorQuotes } from '../domain/vendors/quotes';
 import type { ChangeRequestInput } from '../types/plannerExtended';
 import type { VendorChecklistItem } from '../domain/vendors/types';
@@ -66,7 +66,7 @@ function handleUpdateContext(state: PlanState, updates: Partial<EventContext>): 
 }
 
 function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanState {
-  const { guestDelta = 0, budgetDeltaPercent = 0, costOverrunPercent = 0, timelineDeltaDays = 0 } = payload;
+  const { guestDelta = 0, budgetDeltaPercent = 0, costOverrunPercent = 0, timelineDeltaDays = 0, vendorDelay } = payload;
   const newGuests = Math.max(1, state.context.guestCount + guestDelta);
   const newBudget = Math.round(state.context.totalBudget * (1 + budgetDeltaPercent / 100));
   const newDays = Math.max(7, state.context.daysUntilEvent - timelineDeltaDays);
@@ -77,16 +77,21 @@ function handleApplyChange(state: PlanState, payload: ChangeRequestInput): PlanS
     const costMult = 1 + costOverrunPercent / 100;
     budgetItems = budgetItems.map((item) => ({ ...item, projectedAmount: Math.round(item.projectedAmount * costMult) }));
   }
-  const tasks = timelineDeltaDays !== 0 ? compressTimeline(state.tasks, timelineDeltaDays) : state.tasks;
+  let tasks = timelineDeltaDays !== 0 ? compressTimeline(state.tasks, timelineDeltaDays) : state.tasks;
+  if (vendorDelay && vendorDelay.days > 0) {
+    tasks = propagateDelay(tasks, vendorDelay.taskId, vendorDelay.days);
+  }
   const checklist = syncChecklistWithTimeline(state.checklist, tasks);
   return { ...state, context: nextContext, budgetItems, tasks, checklist };
 }
 
 function handleTaskAction(state: PlanState, action: Extract<PlanAction, { type: 'SET_TASK_STATUS' }>): PlanState {
-  const { taskId, status, delayDays } = action.payload;
-  const tasks = delayDays && delayDays > 0
-    ? propagateDelay(state.tasks, taskId, delayDays)
-    : state.tasks.map((t) => (t.id === taskId ? { ...t, status } : t));
+  const { taskId, status, delayDays = 0 } = action.payload;
+  const ownDelay = status === 'delayed' ? (delayDays > 0 ? delayDays : 10) : 0;
+  const overrides = new Map<string, number>([[taskId, ownDelay]]);
+  const updatedTasks = state.tasks.map((t) => (t.id === taskId ? { ...t, status, ownDelayDays: ownDelay } : t));
+  const recalcResult = recalculateTimeline(updatedTasks, overrides);
+  const tasks = recalcResult.ok ? recalcResult.value : updatedTasks;
   const checklist = syncChecklistWithTimeline(state.checklist, tasks);
   return { ...state, tasks, checklist };
 }
