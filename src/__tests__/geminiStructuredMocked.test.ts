@@ -32,12 +32,7 @@ describe('Gemini 2.5 Flash Structured Call Engine (Mocked)', () => {
   it('successfully parses valid native JSON matching Zod schema', async () => {
     const { GoogleGenAI } = await import('@google/genai');
     const mockGenerate = vi.fn().mockResolvedValue({
-      text: JSON.stringify({
-        changeType: 'budget_shift',
-        amountDelta: 50000,
-        sentiment: 0.5,
-        reasoning: 'Increasing catering allocation',
-      }),
+      text: JSON.stringify({ changeType: 'budget_shift', amountDelta: 50000, sentiment: 0.5, reasoning: 'Catering boost' }),
     });
     vi.mocked(GoogleGenAI).mockImplementation(() => ({
       models: { generateContent: mockGenerate },
@@ -95,6 +90,30 @@ describe('Gemini 2.5 Flash Structured Call Engine (Mocked)', () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.reason).toBe('timeout');
+    }
+  });
+
+  it('fails over to secondary model on 503 error and reports actual model used', async () => {
+    const { GoogleGenAI } = await import('@google/genai');
+    const mockGenerate = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+      .mockResolvedValueOnce({
+        text: JSON.stringify({
+          changeType: 'budget_shift',
+          amountDelta: 20000,
+          sentiment: 0.1,
+          reasoning: 'failover test',
+        }),
+      });
+    vi.mocked(GoogleGenAI).mockImplementation(() => ({
+      models: { generateContent: mockGenerate },
+    }) as unknown as InstanceType<typeof GoogleGenAI>);
+
+    const result = await executeStructuredGeminiCall('prompt', AiChangeRequestResponseSchema, 0.1);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.model).toBe('gemini-3.5-flash-lite');
     }
   });
 

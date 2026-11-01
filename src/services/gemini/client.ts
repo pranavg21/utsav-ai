@@ -8,10 +8,10 @@ import { logger } from '../../utils/logger';
 import { checkRateLimit } from '../../utils/security';
 import { extractErrorMessage } from '../../utils/uiHelpers';
 import {
-  GEMINI_MODEL_ID,
   GEMINI_SYSTEM_INSTRUCTION,
   GEMINI_TIMEOUT_MS,
 } from './config';
+import { dispatchWithFailover } from './dispatcher';
 import type { DeterministicReason } from './types';
 
 const GEMINI_RATE_KEY = 'gemini-api';
@@ -27,6 +27,7 @@ export function getActiveApiKey(): string {
   if (runtimeApiKey) return runtimeApiKey;
   try {
     if (import.meta.env.MODE === 'test') return '';
+    if (!import.meta.env.DEV) return '';
     return import.meta.env.VITE_GEMINI_API_KEY ?? '';
   } catch {
     return '';
@@ -76,30 +77,14 @@ export async function executeStructuredGeminiCall<T>(
       abortSignal: controller.signal,
     };
 
-    let usedModel = GEMINI_MODEL_ID;
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: usedModel,
-        contents: prompt,
-        config: reqConfig,
-      });
-    } catch (modelErr: unknown) {
-      const errMsg = extractErrorMessage(modelErr);
-      if (errMsg.includes('503') || errMsg.includes('UNAVAILABLE') || errMsg.includes('404')) {
-        usedModel = 'gemini-2.5-flash';
-        response = await ai.models.generateContent({
-          model: usedModel,
-          contents: prompt,
-          config: reqConfig,
-        });
-      } else {
-        throw modelErr;
-      }
-    }
+    const { text, usedModel } = await dispatchWithFailover(
+      ai,
+      prompt,
+      reqConfig,
+      controller.signal
+    );
 
     clearTimeout(timer);
-    const text = response.text ?? '';
     const parsed = schema.safeParse(JSON.parse(text));
     if (!parsed.success) {
       logger.warn('Gemini structured response schema validation failed', {

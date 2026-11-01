@@ -6,6 +6,9 @@
 /** Active Gemini model ID for celebration planning. */
 export const GEMINI_MODEL_ID = 'gemini-3.8-flash';
 
+/** Fallback model IDs in failover order. */
+export const GEMINI_FALLBACK_MODELS: readonly string[] = ['gemini-3.5-flash-lite'];
+
 /** Strict system instruction enforcing planner role and hallucination prevention. */
 export const GEMINI_SYSTEM_INSTRUCTION =
   'You are UtsavAI, an expert celebration and event planning intelligence specializing in ' +

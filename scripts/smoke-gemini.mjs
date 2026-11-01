@@ -8,6 +8,11 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
+import {
+  GEMINI_MODEL_ID,
+  GEMINI_FALLBACK_MODELS,
+  GEMINI_SYSTEM_INSTRUCTION,
+} from '../src/services/gemini/config.ts';
 
 const apiKey = process.env.GEMINI_API_KEY ?? '';
 if (!apiKey) {
@@ -17,10 +22,9 @@ if (!apiKey) {
 }
 
 const ai = new GoogleGenAI({ apiKey });
-const MODEL_ID = process.env.GEMINI_MODEL_ID ?? 'gemini-3.8-flash';
-const FALLBACK_MODEL_ID = 'gemini-2.5-flash';
-const SYSTEM_INSTRUCTION =
-  'You are UtsavAI, an expert celebration and event planning intelligence specializing in Indian weddings, birthdays, and community gatherings. Never invent vendor names, availability, or confirmed prices. Label every monetary figure as an estimate.';
+const MODEL_ID = process.env.GEMINI_MODEL_ID ?? GEMINI_MODEL_ID;
+const candidateModels = [MODEL_ID, ...GEMINI_FALLBACK_MODELS];
+const SYSTEM_INSTRUCTION = GEMINI_SYSTEM_INSTRUCTION;
 
 async function testCapability(name, prompt, schema) {
   console.log(`\nTesting capability: [${name}]...`);
@@ -35,26 +39,31 @@ async function testCapability(name, prompt, schema) {
 
     let usedModel = MODEL_ID;
     let response;
-    try {
-      response = await ai.models.generateContent({
-        model: usedModel,
-        contents: prompt,
-        config: reqConfig,
-      });
-    } catch (modelErr) {
-      const msg = modelErr.message ?? String(modelErr);
-      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('404')) {
-        usedModel = FALLBACK_MODEL_ID;
-        console.log(`  ℹ Model ${MODEL_ID} unavailable (${msg.slice(0, 45)}...), failing over to ${usedModel}`);
+    let lastErr = null;
+    for (let i = 0; i < candidateModels.length; i++) {
+      const model = candidateModels[i];
+      try {
+        usedModel = model;
         response = await ai.models.generateContent({
-          model: usedModel,
+          model,
           contents: prompt,
           config: reqConfig,
         });
-      } else {
+        lastErr = null;
+        break;
+      } catch (modelErr) {
+        lastErr = modelErr;
+        const msg = modelErr.message ?? String(modelErr);
+        const isRetryable =
+          msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('429') || msg.includes('404');
+        if (i < candidateModels.length - 1 && isRetryable) {
+          console.log(`  ℹ Model ${model} unavailable (${msg.slice(0, 45)}...), failing over to ${candidateModels[i + 1]}`);
+          continue;
+        }
         throw modelErr;
       }
     }
+    if (lastErr) throw lastErr;
 
     const text = response.text ?? '';
     const parsed = schema.safeParse(JSON.parse(text));
